@@ -41,6 +41,57 @@ export const authApi = {
   getToken: () => {
     return localStorage.getItem('token');
   },
+
+  // Forgot Password Flow
+  forgotPassword: async (email) => {
+    const response = await api.post('/auth/forgot-password', { email });
+    return response.data;
+  },
+
+  verifyResetCode: async (email, code) => {
+    const response = await api.post('/auth/verify-reset-code', { email, code });
+    return response.data;
+  },
+
+  resetPassword: async (resetToken, newPassword, confirmPassword) => {
+    const response = await api.post('/auth/reset-password', {
+      resetToken,
+      newPassword,
+      confirmPassword,
+    });
+    return response.data;
+  },
+
+  // Change Password Flow (for logged-in users)
+  sendChangePasswordCode: async () => {
+    const response = await api.post('/auth/send-change-password-code');
+    return response.data;
+  },
+
+  verifyChangePasswordCode: async (code) => {
+    const response = await api.post('/auth/verify-change-password-code', { code });
+    return response.data;
+  },
+
+  changePasswordWithVerification: async (changeToken, currentPassword, newPassword, confirmPassword) => {
+    const response = await api.put('/auth/change-password-verified', {
+      changeToken,
+      currentPassword,
+      newPassword,
+      confirmPassword,
+    });
+    return response.data;
+  },
+
+  // Direct change password (without email verification)
+  changePassword: async (currentPassword, newPassword, confirmPassword) => {
+    const response = await api.put('/auth/change-password', {
+      currentPassword,
+      newPassword,
+      confirmPassword,
+    });
+    return response.data;
+  },
 };
 
 export default authApi;
