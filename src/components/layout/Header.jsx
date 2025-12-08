@@ -1,12 +1,18 @@
 import { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { Menu, X } from 'lucide-react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Menu, X, Heart, Bell, User, LogOut } from 'lucide-react';
 import { Button } from '../ui';
+import { authApi } from '../../api';
 import urbanLogo from '../../assets/urbanlogo.svg';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+
+  const isAuthenticated = authApi.isAuthenticated();
+  const user = authApi.getStoredUser();
 
   const navLinks = [
     { name: 'Home', path: '/' },
@@ -16,6 +22,11 @@ const Header = () => {
   ];
 
   const isActive = (path) => location.pathname === path;
+
+  const handleLogout = () => {
+    authApi.logout();
+    setIsProfileDropdownOpen(false);
+  };
 
   return (
     <header className="bg-white shadow-sm sticky top-0 z-50">
@@ -43,18 +54,88 @@ const Header = () => {
             ))}
           </nav>
 
-          {/* Auth Buttons */}
+          {/* Auth Section */}
           <div className="hidden md:flex items-center space-x-4">
-            <Link to="/login">
-              <Button variant="outline" size="sm">
-                Login
-              </Button>
-            </Link>
-            <Link to="/register">
-              <Button variant="primary" size="sm">
-                Sign Up
-              </Button>
-            </Link>
+            {isAuthenticated ? (
+              <>
+                {/* Wishlist */}
+                <Link
+                  to="/wishlist"
+                  className="p-2 text-gray-600 hover:text-green-600 transition-colors"
+                >
+                  <Heart size={20} />
+                </Link>
+
+                {/* Notifications */}
+                <button className="p-2 text-gray-600 hover:text-green-600 transition-colors relative">
+                  <Bell size={20} />
+                  {/* Notification badge - uncomment when needed */}
+                  {/* <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span> */}
+                </button>
+
+                {/* Profile Dropdown */}
+                <div className="relative">
+                  <button
+                    onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
+                    className="flex items-center justify-center w-9 h-9 rounded-full bg-green-600 text-white font-medium text-sm hover:bg-green-700 transition-colors"
+                  >
+                    {user?.firstName?.charAt(0)?.toUpperCase() || <User size={18} />}
+                  </button>
+
+                  {isProfileDropdownOpen && (
+                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border py-1 z-50">
+                      <div className="px-4 py-2 border-b">
+                        <p className="text-sm font-medium text-gray-900">
+                          {user?.firstName} {user?.lastName}
+                        </p>
+                        <p className="text-xs text-gray-500 truncate">{user?.email}</p>
+                      </div>
+                      <Link
+                        to="/dashboard"
+                        onClick={() => setIsProfileDropdownOpen(false)}
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                      >
+                        Dashboard
+                      </Link>
+                      <Link
+                        to="/profile"
+                        onClick={() => setIsProfileDropdownOpen(false)}
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                      >
+                        My Profile
+                      </Link>
+                      <Link
+                        to="/change-password"
+                        onClick={() => setIsProfileDropdownOpen(false)}
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                      >
+                        Change Password
+                      </Link>
+                      <button
+                        onClick={handleLogout}
+                        className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-50 flex items-center gap-2"
+                      >
+                        <LogOut size={16} />
+                        Logout
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </>
+            ) : (
+              <>
+                <Link to="/login">
+                  <Button variant="outline" size="sm">
+                    Login
+                  </Button>
+                </Link>
+                <Link to="/register">
+                  <Button variant="primary" size="sm">
+                    Sign Up
+                  </Button>
+                </Link>
+              </>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -85,16 +166,55 @@ const Header = () => {
                 </Link>
               ))}
               <div className="flex flex-col space-y-2 pt-4 border-t">
-                <Link to="/login" onClick={() => setIsMenuOpen(false)}>
-                  <Button variant="outline" size="sm" className="w-full">
-                    Login
-                  </Button>
-                </Link>
-                <Link to="/register" onClick={() => setIsMenuOpen(false)}>
-                  <Button variant="primary" size="sm" className="w-full">
-                    Sign Up
-                  </Button>
-                </Link>
+                {isAuthenticated ? (
+                  <>
+                    <Link
+                      to="/wishlist"
+                      onClick={() => setIsMenuOpen(false)}
+                      className="flex items-center gap-2 text-sm text-gray-600 hover:text-green-600"
+                    >
+                      <Heart size={18} />
+                      Wishlist
+                    </Link>
+                    <Link
+                      to="/dashboard"
+                      onClick={() => setIsMenuOpen(false)}
+                      className="text-sm text-gray-600 hover:text-green-600"
+                    >
+                      Dashboard
+                    </Link>
+                    <Link
+                      to="/profile"
+                      onClick={() => setIsMenuOpen(false)}
+                      className="text-sm text-gray-600 hover:text-green-600"
+                    >
+                      My Profile
+                    </Link>
+                    <button
+                      onClick={() => {
+                        handleLogout();
+                        setIsMenuOpen(false);
+                      }}
+                      className="flex items-center gap-2 text-sm text-red-600 hover:text-red-700"
+                    >
+                      <LogOut size={18} />
+                      Logout
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <Link to="/login" onClick={() => setIsMenuOpen(false)}>
+                      <Button variant="outline" size="sm" className="w-full">
+                        Login
+                      </Button>
+                    </Link>
+                    <Link to="/register" onClick={() => setIsMenuOpen(false)}>
+                      <Button variant="primary" size="sm" className="w-full">
+                        Sign Up
+                      </Button>
+                    </Link>
+                  </>
+                )}
               </div>
             </nav>
           </div>

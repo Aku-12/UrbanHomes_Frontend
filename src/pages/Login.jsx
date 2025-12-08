@@ -39,7 +39,7 @@ const Login = () => {
 
       if (response.success) {
         toast.success('Login successful!');
-        navigate('/dashboard');
+        navigate('/');
       }
     } catch (err) {
       const errorMessage =
