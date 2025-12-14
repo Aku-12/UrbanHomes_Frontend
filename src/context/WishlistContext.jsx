@@ -1,109 +1,211 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
+import { wishlistService } from '../service/wishlistService';
 
 const WishlistContext = createContext();
 
-const WISHLIST_STORAGE_KEY = 'urbanhomes_wishlist';
-
 export const WishlistProvider = ({ children }) => {
   const [wishlist, setWishlist] = useState([]);
+  const [wishlistIds, setWishlistIds] = useState(new Set());
+  const [isLoading, setIsLoading] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // Load wishlist from localStorage on mount
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem(WISHLIST_STORAGE_KEY);
-      if (stored) {
-        setWishlist(JSON.parse(stored));
-      }
-    } catch (error) {
-      console.error('Error loading wishlist:', error);
+  // Check if user is authenticated
+  const isAuthenticated = () => {
+    return !!localStorage.getItem('token');
+  };
+
+  // Fetch wishlist from backend
+  const fetchWishlist = useCallback(async () => {
+    if (!isAuthenticated()) {
+      setWishlist([]);
+      setWishlistIds(new Set());
+      setIsLoaded(true);
+      return;
     }
-    setIsLoaded(true);
+
+    setIsLoading(true);
+    try {
+      const data = await wishlistService.fetchWishlist({ limit: 100 });
+      const rooms = data.rooms || [];
+      setWishlist(rooms);
+      setWishlistIds(new Set(rooms.map((room) => room._id || room.id)));
+    } catch (error) {
+      console.error('Error fetching wishlist:', error);
+      setWishlist([]);
+      setWishlistIds(new Set());
+    } finally {
+      setIsLoading(false);
+      setIsLoaded(true);
+    }
   }, []);
 
-  // Save wishlist to localStorage whenever it changes
+  // Load wishlist on mount and when auth changes
   useEffect(() => {
-    if (isLoaded) {
-      localStorage.setItem(WISHLIST_STORAGE_KEY, JSON.stringify(wishlist));
-    }
-  }, [wishlist, isLoaded]);
+    fetchWishlist();
+  }, [fetchWishlist]);
+
+  // Listen for storage changes (login/logout)
+  useEffect(() => {
+    const handleStorageChange = (e) => {
+      if (e.key === 'token') {
+        fetchWishlist();
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, [fetchWishlist]);
 
   // Add a room to wishlist
-  const addToWishlist = (room) => {
+  const addToWishlist = async (room) => {
+    if (!isAuthenticated()) {
+      toast.error('Please login to add to wishlist');
+      return false;
+    }
+
     const roomId = room._id || room.id;
 
-    // Check if already in wishlist
-    if (wishlist.some((item) => (item._id || item.id) === roomId)) {
+    if (wishlistIds.has(roomId)) {
       toast.error('Already in wishlist');
       return false;
     }
 
-    // Store essential room data
-    const roomData = {
-      _id: room._id,
-      id: room.id,
-      title: room.title,
-      location: room.location,
-      price: room.price,
-      rating: room.rating,
-      images: room.images,
-      image: room.image,
-      roomType: room.roomType,
-      size: room.size,
-      beds: room.beds,
-      amenities: room.amenities,
-      isFeatured: room.isFeatured,
-      isVerified: room.isVerified,
-      addedAt: new Date().toISOString(),
-    };
+    try {
+      await wishlistService.addToWishlist(roomId);
 
-    setWishlist((prev) => [roomData, ...prev]);
-    toast.success('Added to wishlist Successfully');
-    return true;
-  };
+      // Optimistically update the state
+      const roomData = {
+        ...room,
+        addedToWishlistAt: new Date().toISOString(),
+      };
+      setWishlist((prev) => [roomData, ...prev]);
+      setWishlistIds((prev) => new Set([...prev, roomId]));
 
-  // Remove a room from wishlist
-  const removeFromWishlist = (roomId) => {
-    setWishlist((prev) => prev.filter((item) => (item._id || item.id) !== roomId));
-    toast.success('Removed from wishlist');
-  };
-
-  // Toggle wishlist status
-  const toggleWishlist = (room) => {
-    const roomId = room._id || room.id;
-    const isInWishlist = wishlist.some((item) => (item._id || item.id) === roomId);
-
-    if (isInWishlist) {
-      removeFromWishlist(roomId);
-    } else {
-      addToWishlist(room);
+      toast.success('Added to wishlist');
+      return true;
+    } catch (error) {
+      const message = error.response?.data?.message || 'Failed to add to wishlist';
+      toast.error(message);
+      return false;
     }
   };
 
-  // Check if a room is in wishlist
+  // Remove a room from wishlist
+  const removeFromWishlist = async (roomId) => {
+    if (!isAuthenticated()) {
+      toast.error('Please login to manage wishlist');
+      return false;
+    }
+
+    try {
+      await wishlistService.removeFromWishlist(roomId);
+
+      // Update local state
+      setWishlist((prev) => prev.filter((item) => (item._id || item.id) !== roomId));
+      setWishlistIds((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(roomId);
+        return newSet;
+      });
+
+      toast.success('Removed from wishlist');
+      return true;
+    } catch (error) {
+      const message = error.response?.data?.message || 'Failed to remove from wishlist';
+      toast.error(message);
+      return false;
+    }
+  };
+
+  // Toggle wishlist status
+  const toggleWishlist = async (room) => {
+    if (!isAuthenticated()) {
+      toast.error('Please login to manage wishlist');
+      return false;
+    }
+
+    const roomId = room._id || room.id;
+
+    try {
+      const data = await wishlistService.toggleWishlist(roomId);
+
+      if (data.isInWishlist) {
+        // Added to wishlist
+        const roomData = {
+          ...room,
+          addedToWishlistAt: new Date().toISOString(),
+        };
+        setWishlist((prev) => [roomData, ...prev]);
+        setWishlistIds((prev) => new Set([...prev, roomId]));
+        toast.success('Added to wishlist');
+      } else {
+        // Removed from wishlist
+        setWishlist((prev) => prev.filter((item) => (item._id || item.id) !== roomId));
+        setWishlistIds((prev) => {
+          const newSet = new Set(prev);
+          newSet.delete(roomId);
+          return newSet;
+        });
+        toast.success('Removed from wishlist');
+      }
+
+      return data.isInWishlist;
+    } catch (error) {
+      const message = error.response?.data?.message || 'Failed to update wishlist';
+      toast.error(message);
+      return null;
+    }
+  };
+
+  // Check if a room is in wishlist (synchronous using local state)
   const isInWishlist = (roomId) => {
-    return wishlist.some((item) => (item._id || item.id) === roomId);
+    return wishlistIds.has(roomId);
   };
 
   // Clear entire wishlist
-  const clearWishlist = () => {
-    setWishlist([]);
-    toast.success('Wishlist cleared');
+  const clearWishlist = async () => {
+    if (!isAuthenticated()) {
+      toast.error('Please login to manage wishlist');
+      return false;
+    }
+
+    try {
+      // Remove each item from wishlist
+      const roomIds = [...wishlistIds];
+      await Promise.all(roomIds.map((id) => wishlistService.removeFromWishlist(id)));
+
+      setWishlist([]);
+      setWishlistIds(new Set());
+      toast.success('Wishlist cleared');
+      return true;
+    } catch (error) {
+      console.error('Error clearing wishlist:', error);
+      toast.error('Failed to clear wishlist');
+      // Refresh to get actual state
+      fetchWishlist();
+      return false;
+    }
   };
 
-  // Get wishlist count
+  // Refresh wishlist from server
+  const refreshWishlist = () => {
+    fetchWishlist();
+  };
+
   const wishlistCount = wishlist.length;
 
   const value = {
     wishlist,
     wishlistCount,
+    isLoading,
+    isLoaded,
     addToWishlist,
     removeFromWishlist,
     toggleWishlist,
     isInWishlist,
     clearWishlist,
-    isLoaded,
+    refreshWishlist,
   };
 
   return (

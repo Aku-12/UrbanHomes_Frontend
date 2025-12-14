@@ -1,11 +1,13 @@
 import React from 'react'
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
-import { ChangePassword, ForgotPassword, LandingPage, Login, Register } from '../pages'
+import { ChangePassword, ForgotPassword, LandingPage, Login, Register, RoomListingPage, RoomDetailsPage, WishlistPage } from '../pages'
+import { WishlistProvider } from '../context'
 
 function AppRouter() {
   return (
    <BrowserRouter>
+      <WishlistProvider>
         <Toaster
           position="bottom-right"
           toastOptions={{
@@ -37,12 +39,15 @@ function AppRouter() {
           <Route path="/register" element={<Register />} />
           <Route path="/forgot-password" element={<ForgotPassword/>} />
           <Route path="/change-password" element={<ChangePassword />} />
-         
-          <Route path="/rooms" element={<div className="p-8">Rooms - Coming Soon</div>} />
+
+          <Route path="/rooms" element={<RoomListingPage />} />
+          <Route path="/rooms/:id" element={<RoomDetailsPage />} />
+          <Route path="/wishlist" element={<WishlistPage />} />
           <Route path="/contact" element={<div className="p-8">Contact - Coming Soon</div>} />
           <Route path="/about" element={<div className="p-8">About Us - Coming Soon</div>} />
           <Route path="/dashboard" element={<div className="p-8">Dashboard - Coming Soon</div>} />
         </Routes>
+      </WishlistProvider>
    </BrowserRouter>
   )
 }
