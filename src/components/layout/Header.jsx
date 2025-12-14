@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Menu, X, Heart, Bell, User, LogOut } from 'lucide-react';
 import { Button } from '../ui';
 import { authApi } from '../../api';
+import { useWishlist } from '../../context';
 import urbanLogo from '../../assets/urbanlogo.svg';
 
 const Header = () => {
@@ -10,6 +11,7 @@ const Header = () => {
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+  const { wishlistCount } = useWishlist();
 
   const isAuthenticated = authApi.isAuthenticated();
   const user = authApi.getStoredUser();
@@ -61,9 +63,14 @@ const Header = () => {
                 {/* Wishlist */}
                 <Link
                   to="/wishlist"
-                  className="p-2 text-gray-600 hover:text-green-600 transition-colors"
+                  className="relative p-2 text-gray-600 hover:text-green-600 transition-colors"
                 >
-                  <Heart size={20} />
+                  <Heart size={20} className={wishlistCount > 0 ? 'text-green-600' : ''} />
+                  {wishlistCount > 0 && (
+                    <span className="absolute -top-0.5 -right-0.5 w-5 h-5 bg-green-600 text-white text-xs font-medium rounded-full flex items-center justify-center">
+                      {wishlistCount > 9 ? '9+' : wishlistCount}
+                    </span>
+                  )}
                 </Link>
 
                 {/* Notifications */}
@@ -173,8 +180,13 @@ const Header = () => {
                       onClick={() => setIsMenuOpen(false)}
                       className="flex items-center gap-2 text-sm text-gray-600 hover:text-green-600"
                     >
-                      <Heart size={18} />
+                      <Heart size={18} className={wishlistCount > 0 ? 'text-green-600' : ''} />
                       Wishlist
+                      {wishlistCount > 0 && (
+                        <span className="bg-green-600 text-white text-xs px-2 py-0.5 rounded-full">
+                          {wishlistCount}
+                        </span>
+                      )}
                     </Link>
                     <Link
                       to="/dashboard"

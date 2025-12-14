@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   Search,
   MapPin,
@@ -8,18 +8,33 @@ import {
   CheckCircle,
   Star,
   ArrowRight,
+  Loader2,
 } from 'lucide-react';
-import toast from 'react-hot-toast';
 import { Header, Footer } from '../components/layout';
-import { Button } from '../components/ui';
+import { Button, RoomCard } from '../components/ui';
+import { useFeaturedRooms } from '../hooks/useFeaturedRooms';
+import { usePopularRooms } from '../hooks/usePopularRooms';
+import { useWishlist } from '../context';
 
 const LandingPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
+  const navigate = useNavigate();
+  const { toggleWishlist, isInWishlist } = useWishlist();
 
-  const handleLoginFirst = () => {
-    toast('Please login first', {
-      icon: '🔐',
-    });
+  // Fetch featured and popular rooms from API
+  const { data: featuredRooms, isLoading: featuredLoading, error: featuredError } = useFeaturedRooms(6);
+  const { data: popularRooms, isLoading: popularLoading, error: popularError } = usePopularRooms('Kathmandu', 6);
+
+  const handleFavoriteClick = (room) => {
+    toggleWishlist(room);
+  };
+
+  const handleSearch = () => {
+    if (searchQuery.trim()) {
+      navigate(`/rooms?city=${encodeURIComponent(searchQuery.trim())}`);
+    } else {
+      navigate('/rooms');
+    }
   };
 
   // Stats data
@@ -53,35 +68,6 @@ const LandingPage = () => {
     },
   ];
 
-  // Sample room data
-  const popularRooms = [
-    {
-      id: 1,
-      title: 'Modern Studio Room in Kathmandu',
-      location: 'Tinkune, Kathmandu',
-      price: 12000,
-      rating: 4.9,
-      image: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=400&h=300&fit=crop',
-      featured: true,
-    },
-    {
-      id: 2,
-      title: 'Cozy 1BHK Flat in Bharatpur',
-      location: 'Narayangarh, Bharatpur',
-      price: 15000,
-      rating: 4.7,
-      image: 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=400&h=300&fit=crop',
-    },
-    {
-      id: 3,
-      title: 'Spacious 2BHK with View',
-      location: 'Thamel, Kathmandu',
-      price: 18000,
-      rating: 4.8,
-      image: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400&h=300&fit=crop',
-    },
-  ];
-
   // Testimonials data
   const testimonials = [
     {
@@ -109,6 +95,11 @@ const LandingPage = () => {
       avatar: 'https://randomuser.me/api/portraits/women/65.jpg',
     },
   ];
+
+  // Use featured rooms if available, fallback to popular rooms
+  const displayRooms = featuredRooms?.length > 0 ? featuredRooms : popularRooms;
+  const isLoading = featuredLoading || popularLoading;
+  const hasError = featuredError && popularError;
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -140,7 +131,7 @@ const LandingPage = () => {
                     className="w-full pl-12 pr-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   />
                 </div>
-                <Button variant="primary" size="md" showArrow onClick={handleLoginFirst}>
+                <Button variant="primary" size="md" showArrow onClick={handleSearch}>
                   Search Rooms
                 </Button>
               </div>
@@ -222,50 +213,41 @@ const LandingPage = () => {
             </Link>
           </div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {popularRooms.map((room) => (
-              <div
-                key={room.id}
-                className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow"
-              >
-                <div className="relative">
-                  <img
-                    src={room.image}
-                    alt={room.title}
-                    className="w-full h-48 object-cover"
-                  />
-                  {room.featured && (
-                    <span className="absolute top-3 left-3 bg-green-600 text-white text-xs font-medium px-2 py-1 rounded">
-                      Featured
-                    </span>
-                  )}
-                  <button
-                    onClick={handleLoginFirst}
-                    className="absolute top-3 right-3 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow hover:scale-110 transition-transform"
-                  >
-                    <Heart size={16} className="text-gray-400" />
-                  </button>
-                </div>
-                <div className="p-4">
-                  <div className="flex items-center gap-1 text-sm text-gray-500 mb-1">
-                    <MapPin size={14} />
-                    {room.location}
-                  </div>
-                  <h3 className="font-semibold text-gray-900 mb-2">{room.title}</h3>
-                  <div className="flex items-center justify-between">
-                    <p>
-                      <span className="text-green-600 font-bold">Rs {room.price.toLocaleString()}</span>
-                      <span className="text-gray-500 text-sm">/month</span>
-                    </p>
-                    <div className="flex items-center gap-1">
-                      <Star size={14} className="text-yellow-400 fill-yellow-400" />
-                      <span className="text-sm font-medium">{room.rating}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+          {/* Loading State */}
+          {isLoading && (
+            <div className="flex justify-center items-center py-12">
+              <Loader2 className="w-8 h-8 animate-spin text-green-600" />
+              <span className="ml-2 text-gray-600">Loading rooms...</span>
+            </div>
+          )}
+
+          {/* Error State */}
+          {hasError && !isLoading && (
+            <div className="text-center py-12">
+              <p className="text-gray-500">Unable to load rooms. Please try again later.</p>
+            </div>
+          )}
+
+          {/* Rooms Grid */}
+          {!isLoading && !hasError && displayRooms && displayRooms.length > 0 && (
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {displayRooms.map((room) => (
+                <RoomCard
+                  key={room._id || room.id}
+                  room={room}
+                  onFavoriteClick={handleFavoriteClick}
+                  isFavorite={isInWishlist(room._id || room.id)}
+                />
+              ))}
+            </div>
+          )}
+
+          {/* Empty State */}
+          {!isLoading && !hasError && (!displayRooms || displayRooms.length === 0) && (
+            <div className="text-center py-12">
+              <p className="text-gray-500">No rooms available at the moment.</p>
+            </div>
+          )}
 
           <Link
             to="/rooms"
