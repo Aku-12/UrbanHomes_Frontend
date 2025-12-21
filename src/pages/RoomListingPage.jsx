@@ -113,15 +113,15 @@ const RoomListingPage = () => {
     <div className="min-h-screen flex flex-col bg-gray-50">
       <Header />
 
-      <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
-        <div className="flex gap-8">
+      <main className="flex-1 max-w-7xl mx-auto py-8 w-full">
+        <div className="flex gap-6">
           {/* Filters Sidebar */}
           <aside
             className={`${
               showFilters ? 'w-64' : 'w-0'
             } flex-shrink-0 transition-all duration-300 overflow-hidden`}
           >
-            <div className="bg-white rounded-xl p-6 shadow-sm">
+            <div className="bg-white rounded-xl p-4 shadow-sm">
               {/* Filters Header */}
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-2">
@@ -224,7 +224,7 @@ const RoomListingPage = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-3">
                   Amenities
                 </label>
-                <div className="space-y-3">
+                <div className="space-y-4">
                   <Checkbox
                     label="WiFi"
                     checked={filters.amenities.wifi}
@@ -312,8 +312,8 @@ const RoomListingPage = () => {
 
             {/* Room Cards Grid */}
             {isLoading ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {[...Array(6)].map((_, i) => (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                {[...Array(8)].map((_, i) => (
                   <div
                     key={i}
                     className="bg-white rounded-xl overflow-hidden shadow-sm animate-pulse"
@@ -341,7 +341,7 @@ const RoomListingPage = () => {
               <div
                 className={
                   viewMode === 'grid'
-                    ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6'
+                    ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5'
                     : 'space-y-4'
                 }
               >

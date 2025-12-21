@@ -41,7 +41,7 @@ const WishlistPage = () => {
     <div className="min-h-screen flex flex-col bg-gray-50">
       <Header />
 
-      <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+      <main className="flex-1 max-w-7xl mx-auto py-8 w-full">
         {/* Page Header */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-2">
@@ -95,7 +95,7 @@ const WishlistPage = () => {
                 />
               </div>
 
-              {/* View Toggle */}
+              
               <div className="flex items-center gap-1 border border-gray-300 rounded-lg p-1">
                 <button
                   onClick={() => setViewMode('grid')}
@@ -121,7 +121,7 @@ const WishlistPage = () => {
                 </button>
               </div>
 
-              {/* Clear All Button */}
+              
               {wishlistCount > 0 && (
                 <button
                   onClick={clearWishlist}
@@ -135,7 +135,6 @@ const WishlistPage = () => {
           </div>
         </div>
 
-        {/* Wishlist Content */}
         {isLoading ? (
           <div className="bg-white rounded-xl shadow-sm p-12 text-center">
             <div className="flex flex-col items-center justify-center">
@@ -165,7 +164,7 @@ const WishlistPage = () => {
           <div
             className={
               viewMode === 'grid'
-                ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6'
+                ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5'
                 : 'space-y-4'
             }
           >

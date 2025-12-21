@@ -1,8 +1,25 @@
 import React from 'react'
-import { BrowserRouter, Route, Routes } from 'react-router-dom'
+import { BrowserRouter, Route, Routes, Navigate } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
 import { ChangePassword, ForgotPassword, LandingPage, Login, Register, RoomListingPage, RoomDetailsPage, WishlistPage } from '../pages'
+import { DashboardOverview, ManageRooms, BookingsManagement, UsersManagement, AddRoom, EditRoom } from '../pages/admin'
 import { WishlistProvider } from '../context'
+
+// Admin Route Protection Component
+const AdminRoute = ({ children }) => {
+  const token = localStorage.getItem('token');
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+  if (!token) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (user.role !== 'admin') {
+    return <Navigate to="/" replace />;
+  }
+
+  return children;
+}
 
 function AppRouter() {
   return (
@@ -45,7 +62,14 @@ function AppRouter() {
           <Route path="/wishlist" element={<WishlistPage />} />
           <Route path="/contact" element={<div className="p-8">Contact - Coming Soon</div>} />
           <Route path="/about" element={<div className="p-8">About Us - Coming Soon</div>} />
-          <Route path="/dashboard" element={<div className="p-8">Dashboard - Coming Soon</div>} />
+
+          {/* Admin Routes */}
+          <Route path="/admin" element={<AdminRoute><DashboardOverview /></AdminRoute>} />
+          <Route path="/admin/rooms" element={<AdminRoute><ManageRooms /></AdminRoute>} />
+          <Route path="/admin/rooms/add" element={<AdminRoute><AddRoom /></AdminRoute>} />
+          <Route path="/admin/rooms/edit/:id" element={<AdminRoute><EditRoom /></AdminRoute>} />
+          <Route path="/admin/bookings" element={<AdminRoute><BookingsManagement /></AdminRoute>} />
+          <Route path="/admin/users" element={<AdminRoute><UsersManagement /></AdminRoute>} />
         </Routes>
       </WishlistProvider>
    </BrowserRouter>

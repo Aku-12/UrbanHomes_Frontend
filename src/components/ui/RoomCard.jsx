@@ -89,7 +89,7 @@ const RoomCard = ({
             <img
               src={imageUrl}
               alt={title}
-              className="w-full h-48 object-cover"
+              className="w-full h-40 object-cover"
               onError={handleImageError}
             />
 
@@ -164,7 +164,7 @@ const RoomCard = ({
         <img
           src={imageUrl}
           alt={title}
-          className="w-full h-48 object-cover"
+          className="w-full h-40 object-cover"
           onError={handleImageError}
         />
 
@@ -213,7 +213,7 @@ const RoomCard = ({
       </div>
 
       {/* Content */}
-      <div className="p-4">
+      <div className="p-3">
         {/* Location and Rating Row */}
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-1 text-sm text-gray-500">
@@ -238,7 +238,7 @@ const RoomCard = ({
         </h3>
 
         {/* Room Details Row */}
-        <div className="flex items-center gap-4 text-sm text-gray-500 mb-4">
+        <div className="flex items-center gap-3 text-sm text-gray-500 mb-3">
           {roomType && (
             <div className="flex items-center gap-1">
               <Bed size={14} />
@@ -268,15 +268,15 @@ const RoomCard = ({
         {/* Price and Button Row */}
         <div className="flex items-center justify-between">
           <p>
-            <span className="text-green-600 font-bold text-lg">
+            <span className="text-green-600 font-semibold text-sm">
               Rs {typeof price === 'number' ? price.toLocaleString() : price}
             </span>
-            <span className="text-gray-500 text-sm">/month</span>
+            <span className="text-gray-500 text-xs">/month</span>
           </p>
 
           <Link
             to={`/rooms/${roomId}`}
-            className="bg-green-600 hover:bg-green-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+            className="bg-green-600 hover:bg-green-700 text-white text-xs font-medium px-3 py-1.5 rounded-md transition-colors"
           >
             View Details
           </Link>

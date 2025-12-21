@@ -35,12 +35,12 @@ const Footer = () => {
   return (
     <footer className="bg-gray-900 text-gray-300">
       {/* Main Footer */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8">
+      <div className="max-w-7xl mx-auto py-10">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
           {/* Brand Section */}
           <div className="lg:col-span-2">
-            <img src={urbanLogo} alt="Urban Homes" className="h-8 brightness-0 invert mb-4" />
-            <p className="text-sm text-gray-400 mb-4 max-w-xs">
+            <img src={urbanLogo} alt="Urban Homes" className="h-12 w-auto brightness-0 invert mb-3" />
+            <p className="text-xs text-gray-400 mb-3 max-w-xs">
               Making room hunting simple and stress-free. Find your perfect space with ease and confidence.
             </p>
             <div className="flex space-x-4">
@@ -49,9 +49,9 @@ const Footer = () => {
                   key={social.label}
                   href={social.href}
                   aria-label={social.label}
-                  className="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center hover:bg-green-600 transition-colors"
+                  className="w-8 h-8 bg-gray-800 rounded-full flex items-center justify-center hover:bg-green-600 transition-colors"
                 >
-                  <social.icon size={18} />
+                  <social.icon size={14} />
                 </a>
               ))}
             </div>
@@ -60,13 +60,13 @@ const Footer = () => {
           {/* Links Sections */}
           {Object.entries(footerLinks).map(([title, links]) => (
             <div key={title}>
-              <h4 className="text-white font-semibold mb-4">{title}</h4>
-              <ul className="space-y-2">
+              <h4 className="text-white text-sm font-semibold mb-3">{title}</h4>
+              <ul className="space-y-1.5">
                 {links.map((link) => (
                   <li key={link.name}>
                     <Link
                       to={link.path}
-                      className="text-sm text-gray-400 hover:text-white transition-colors"
+                      className="text-xs text-gray-400 hover:text-white transition-colors"
                     >
                       {link.name}
                     </Link>
@@ -80,16 +80,16 @@ const Footer = () => {
 
       {/* Bottom Bar */}
       <div className="border-t border-gray-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="max-w-7xl mx-auto py-5">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <p className="text-sm text-gray-400">
+            <p className="text-xs text-gray-400">
               &copy; {currentYear} Urban Homes. All rights reserved.
             </p>
-            <div className="flex space-x-6">
-              <Link to="/privacy" className="text-sm text-gray-400 hover:text-white">
+            <div className="flex space-x-5">
+              <Link to="/privacy" className="text-xs text-gray-400 hover:text-white">
                 Privacy Policy
               </Link>
-              <Link to="/terms" className="text-sm text-gray-400 hover:text-white">
+              <Link to="/terms" className="text-xs text-gray-400 hover:text-white">
                 Terms of Service
               </Link>
             </div>

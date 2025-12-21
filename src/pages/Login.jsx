@@ -39,7 +39,12 @@ const Login = () => {
 
       if (response.success) {
         toast.success('Login successful!');
-        navigate('/');
+        // Redirect admin users to admin dashboard
+        if (response.user?.role === 'admin') {
+          navigate('/admin');
+        } else {
+          navigate('/');
+        }
       }
     } catch (err) {
       const errorMessage =

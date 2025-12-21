@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   MapPin,
@@ -24,6 +24,7 @@ import {
   Check,
   Calendar,
   ChevronDown,
+  ImageOff,
 } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
@@ -44,6 +45,8 @@ const defaultIcon = L.icon({
   shadowSize: [41, 41],
 });
 L.Marker.prototype.options.icon = defaultIcon;
+
+const PLACEHOLDER_IMAGE = 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&h=500&fit=crop';
 
 // Amenity icons mapping
 const amenityIcons = {
@@ -70,6 +73,7 @@ const RoomDetailsPage = () => {
   const [showAllAmenities, setShowAllAmenities] = useState(false);
   const [showAllReviews, setShowAllReviews] = useState(false);
   const [showFullDescription, setShowFullDescription] = useState(false);
+  const [imageErrors, setImageErrors] = useState({});
 
   // Booking form state
   const [bookingData, setBookingData] = useState({
@@ -78,14 +82,59 @@ const RoomDetailsPage = () => {
     renters: '1',
   });
 
+  // Extract image URLs from various possible formats
+  const images = useMemo(() => {
+    if (!room) return [PLACEHOLDER_IMAGE];
+
+    const extractedImages = [];
+
+    // Check for images array
+    if (room.images && Array.isArray(room.images) && room.images.length > 0) {
+      room.images.forEach((img) => {
+        if (typeof img === 'string' && img.trim()) {
+          extractedImages.push(img);
+        } else if (img?.url && typeof img.url === 'string') {
+          extractedImages.push(img.url);
+        }
+      });
+    }
+
+    // Check for single image property
+    if (extractedImages.length === 0 && room.image) {
+      if (typeof room.image === 'string' && room.image.trim()) {
+        extractedImages.push(room.image);
+      } else if (room.image?.url) {
+        extractedImages.push(room.image.url);
+      }
+    }
+
+    // Check for imageUrl property
+    if (extractedImages.length === 0 && room.imageUrl && typeof room.imageUrl === 'string') {
+      extractedImages.push(room.imageUrl);
+    }
+
+    // Return placeholder if no images found
+    return extractedImages.length > 0 ? extractedImages : [PLACEHOLDER_IMAGE];
+  }, [room]);
+
+  // Handle image error
+  const handleImageError = (index) => {
+    setImageErrors((prev) => ({ ...prev, [index]: true }));
+  };
+
+  // Get display image (with error fallback)
+  const getDisplayImage = (index) => {
+    return imageErrors[index] ? PLACEHOLDER_IMAGE : images[index];
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex flex-col bg-gray-50">
         <Header />
-        <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+        <main className="flex-1 max-w-7xl mx-auto py-8 w-full">
           <div className="animate-pulse">
             <div className="h-96 bg-gray-200 rounded-xl mb-8" />
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="lg:col-span-2 space-y-6">
                 <div className="h-8 bg-gray-200 rounded w-3/4" />
                 <div className="h-4 bg-gray-200 rounded w-1/2" />
@@ -141,10 +190,6 @@ const RoomDetailsPage = () => {
       </div>
     );
   }
-
-  const images = room.images?.length > 0
-    ? room.images.map((img) => img.url)
-    : ['https://via.placeholder.com/800x500?text=No+Image'];
 
   const locationText = `${room.location?.area}, ${room.location?.city}`;
   const coordinates = room.location?.coordinates || { latitude: 27.7172, longitude: 85.324 }; // Default to Kathmandu
@@ -229,55 +274,96 @@ const RoomDetailsPage = () => {
     <div className="min-h-screen flex flex-col bg-gray-50">
       <Header />
 
-      <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+      <main className="flex-1 max-w-7xl mx-auto py-8 w-full">
         {/* Image Gallery */}
-        <div className="relative rounded-xl overflow-hidden mb-8">
-          <div className="relative h-[400px] md:h-[500px]">
-            <img
-              src={images[currentImageIndex]}
-              alt={`${room.title} - Image ${currentImageIndex + 1}`}
-              className="w-full h-full object-cover"
-            />
+        <div className="mb-8">
+          {/* Main Image */}
+          <div className="relative rounded-xl overflow-hidden">
+            <div className="relative h-[400px] md:h-[500px] bg-gray-100">
+              <img
+                src={getDisplayImage(currentImageIndex)}
+                alt={`${room.title} - Image ${currentImageIndex + 1}`}
+                className="w-full h-full object-cover"
+                onError={() => handleImageError(currentImageIndex)}
+              />
 
-            {/* Image Navigation */}
-            {images.length > 1 && (
-              <>
-                <button
-                  onClick={prevImage}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 rounded-full flex items-center justify-center shadow-lg hover:bg-white transition-colors"
-                >
-                  <ChevronLeft size={24} />
-                </button>
-                <button
-                  onClick={nextImage}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 rounded-full flex items-center justify-center shadow-lg hover:bg-white transition-colors"
-                >
-                  <ChevronRight size={24} />
-                </button>
-
-                {/* Image Dots */}
-                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
-                  {images.map((_, index) => (
-                    <button
-                      key={index}
-                      onClick={() => setCurrentImageIndex(index)}
-                      className={`w-2 h-2 rounded-full transition-colors ${
-                        index === currentImageIndex
-                          ? 'bg-white'
-                          : 'bg-white/50 hover:bg-white/75'
-                      }`}
-                    />
-                  ))}
+              {/* Image Error Fallback UI */}
+              {imageErrors[currentImageIndex] && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-100">
+                  <ImageOff size={48} className="text-gray-400 mb-2" />
+                  <p className="text-gray-500">Image not available</p>
                 </div>
-              </>
-            )}
+              )}
+
+              {/* Image Counter Badge */}
+              <div className="absolute top-4 left-4 bg-black/60 text-white px-3 py-1 rounded-full text-sm">
+                {currentImageIndex + 1} / {images.length}
+              </div>
+
+              {/* Image Navigation */}
+              {images.length > 1 && (
+                <>
+                  <button
+                    onClick={prevImage}
+                    className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 rounded-full flex items-center justify-center shadow-lg hover:bg-white transition-colors"
+                  >
+                    <ChevronLeft size={24} />
+                  </button>
+                  <button
+                    onClick={nextImage}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 rounded-full flex items-center justify-center shadow-lg hover:bg-white transition-colors"
+                  >
+                    <ChevronRight size={24} />
+                  </button>
+
+                  {/* Image Dots (for mobile) */}
+                  <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 md:hidden">
+                    {images.map((_, index) => (
+                      <button
+                        key={index}
+                        onClick={() => setCurrentImageIndex(index)}
+                        className={`w-2 h-2 rounded-full transition-colors ${
+                          index === currentImageIndex
+                            ? 'bg-white'
+                            : 'bg-white/50 hover:bg-white/75'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
           </div>
+
+          {/* Thumbnail Strip (for desktop) */}
+          {images.length > 1 && (
+            <div className="hidden md:flex gap-2 mt-3 overflow-x-auto pb-2">
+              {images.map((imgUrl, index) => (
+                <button
+                  key={index}
+                  onClick={() => setCurrentImageIndex(index)}
+                  className={`flex-shrink-0 w-24 h-16 rounded-lg overflow-hidden border-2 transition-all ${
+                    index === currentImageIndex
+                      ? 'border-green-600 ring-2 ring-green-200'
+                      : 'border-transparent hover:border-gray-300'
+                  }`}
+                >
+                  <img
+                    src={imageErrors[index] ? PLACEHOLDER_IMAGE : imgUrl}
+                    alt={`Thumbnail ${index + 1}`}
+                    className="w-full h-full object-cover"
+                    onError={() => handleImageError(index)}
+                  />
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Main Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left Column - Room Details */}
-          <div className="lg:col-span-2 space-y-8">
+          <div className="lg:col-span-2 space-y-6">
             {/* Title Section */}
             <div>
               {/* Verified Badge */}
