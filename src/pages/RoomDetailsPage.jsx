@@ -255,7 +255,12 @@ const RoomDetailsPage = () => {
       toast.error('Please select a move-in date');
       return;
     }
-    toast.success('Redirecting to payment...');
+    // Navigate to booking page with query params
+    const params = new URLSearchParams({
+      moveInDate: bookingData.moveInDate,
+      duration: bookingData.leaseDuration,
+    });
+    navigate(`/booking/${id}?${params.toString()}`);
   };
 
   const handleInquiry = () => {

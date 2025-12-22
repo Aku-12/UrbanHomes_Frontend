@@ -7,3 +7,5 @@ export { default as RoomListingPage } from './RoomListingPage';
 export { default as RoomDetailsPage } from './RoomDetailsPage';
 export { default as WishlistPage } from './WishlistPage';
 
+export { default as BookingPage } from './BookingPage';
+export { default as BookingConfirmation } from './BookingConfirmation';

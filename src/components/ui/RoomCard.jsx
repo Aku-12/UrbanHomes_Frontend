@@ -158,7 +158,8 @@ const RoomCard = ({
 
   // Detailed variant for listing page
   return (
-    <div className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+    <Link to={`/rooms/${roomId}`} className="block">
+    <div className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow cursor-pointer">
       {/* Image Container */}
       <div className="relative">
         <img
@@ -274,15 +275,15 @@ const RoomCard = ({
             <span className="text-gray-500 text-xs">/month</span>
           </p>
 
-          <Link
-            to={`/rooms/${roomId}`}
+          <span
             className="bg-green-600 hover:bg-green-700 text-white text-xs font-medium px-3 py-1.5 rounded-md transition-colors"
           >
             View Details
-          </Link>
+          </span>
         </div>
       </div>
     </div>
+    </Link>
   );
 };
 

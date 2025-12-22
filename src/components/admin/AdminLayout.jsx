@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -11,14 +11,29 @@ import {
   Menu,
   X
 } from 'lucide-react';
+import { adminApi } from '../../api';
+import urbanLogo from '../../assets/urbanlogo.svg';
 
 const AdminLayout = ({ children }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [pendingBookingsCount, setPendingBookingsCount] = useState(0);
 
   const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+  useEffect(() => {
+    const fetchPendingBookings = async () => {
+      try {
+        const response = await adminApi.getAllBookings({ status: 'pending', limit: 1 });
+        setPendingBookingsCount(response.data.total || 0);
+      } catch (error) {
+        console.error('Failed to fetch pending bookings count:', error);
+      }
+    };
+    fetchPendingBookings();
+  }, [location.pathname]);
 
   const menuItems = [
     {
@@ -88,13 +103,8 @@ const AdminLayout = ({ children }) => {
         {/* Logo */}
         <div className="p-4 border-b border-gray-100">
           <Link to="/admin" className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-              <Home className="w-6 h-6 text-green-600" />
-            </div>
-            <div>
-              <h1 className="font-bold text-gray-900">Urban Homes</h1>
-              <p className="text-xs text-gray-500">ADMIN PANEL</p>
-            </div>
+            <img src={urbanLogo} alt="Urban Homes" className="h-10" />
+            <p className="text-xs text-gray-500 font-semibold">ADMIN PANEL</p>
           </Link>
         </div>
 
@@ -138,9 +148,9 @@ const AdminLayout = ({ children }) => {
                       >
                         <Icon className={`w-5 h-5 ${isActive(item.path) ? 'text-white' : 'text-gray-400'}`} />
                         <span>{item.label}</span>
-                        {item.badge && (
+                        {item.badge && pendingBookingsCount > 0 && (
                           <span className="ml-auto bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
-                            8
+                            {pendingBookingsCount > 99 ? '99+' : pendingBookingsCount}
                           </span>
                         )}
                       </Link>
