@@ -139,9 +139,6 @@ const LandingPage = () => {
                     className="w-full pl-10 pr-3 py-3 text-sm rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   />
                 </div>
-                <Button variant="primary" size="md" showArrow onClick={handleSearch}>
-                  Search Rooms
-                </Button>
               </div>
 
               {/* Stats */}
