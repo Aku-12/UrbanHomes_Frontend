@@ -8,6 +8,7 @@ export { default as RoomDetailsPage } from './RoomDetailsPage';
 export { default as WishlistPage } from './WishlistPage';
 export { default as ContactPage } from './ContactPage';
 export { default as AboutPage } from './AboutPage';
+export { default as ProfilePage } from './ProfilePage';
 
 export { default as BookingPage } from './BookingPage';
 export { default as BookingConfirmation } from './BookingConfirmation';

@@ -257,7 +257,6 @@ const ContactPage = () => {
                       <option value="Room Inquiry">Room Inquiry</option>
                       <option value="Booking Help">Booking Help</option>
                       <option value="List a Room">List a Room</option>
-                      <option value="Bug Report">Bug Report</option>
                       <option value="Partnership">Partnership</option>
                       <option value="Other">Other</option>
                     </select>
