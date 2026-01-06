@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Home, Eye, Check, X } from 'lucide-react';
+import { Home, Eye, Check, X, Trash2 } from 'lucide-react';
 import { adminApi } from '../../api';
 import AdminLayout from '../../components/admin/AdminLayout';
 import toast from 'react-hot-toast';
@@ -108,6 +108,19 @@ const BookingsManagement = () => {
     } catch (error) {
       console.error('Failed to reject booking:', error);
       toast.error('Failed to reject booking');
+    }
+  };
+
+  const handleDelete = async (bookingId) => {
+    if (!window.confirm('Are you sure you want to delete this booking? This action cannot be undone.')) return;
+
+    try {
+      await adminApi.deleteBooking(bookingId);
+      toast.success('Booking deleted successfully');
+      fetchBookings(pagination.page);
+    } catch (error) {
+      console.error('Failed to delete booking:', error);
+      toast.error('Failed to delete booking');
     }
   };
 
@@ -253,6 +266,13 @@ const BookingsManagement = () => {
                                 </button>
                               </>
                             )}
+                            <button
+                              onClick={() => handleDelete(booking._id)}
+                              className="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-100 text-gray-600 hover:bg-red-100 hover:text-red-600 transition-colors"
+                              title="Delete Booking"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
                           </div>
                         </td>
                       </tr>

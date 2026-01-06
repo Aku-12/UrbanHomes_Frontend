@@ -33,6 +33,7 @@ const adminApi = {
   getBookingById: (bookingId) => api.get(`/admin/bookings/${bookingId}`),
   approveBooking: (bookingId) => api.patch(`/admin/bookings/${bookingId}/approve`),
   rejectBooking: (bookingId) => api.patch(`/admin/bookings/${bookingId}/reject`),
+  deleteBooking: (bookingId) => api.delete(`/admin/bookings/${bookingId}`),
 };
 
 export default adminApi;
