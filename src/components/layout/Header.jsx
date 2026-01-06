@@ -98,25 +98,11 @@ const Header = () => {
                         <p className="text-xs text-gray-500 truncate">{user?.email}</p>
                       </div>
                       <Link
-                        to="/dashboard"
-                        onClick={() => setIsProfileDropdownOpen(false)}
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                      >
-                        Dashboard
-                      </Link>
-                      <Link
                         to="/profile"
                         onClick={() => setIsProfileDropdownOpen(false)}
                         className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                       >
                         My Profile
-                      </Link>
-                      <Link
-                        to="/change-password"
-                        onClick={() => setIsProfileDropdownOpen(false)}
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                      >
-                        Change Password
                       </Link>
                       <button
                         onClick={handleLogout}
@@ -190,13 +176,6 @@ const Header = () => {
                     </Link>
                     <Link
                       to="/dashboard"
-                      onClick={() => setIsMenuOpen(false)}
-                      className="text-sm text-gray-600 hover:text-green-600"
-                    >
-                      Dashboard
-                    </Link>
-                    <Link
-                      to="/profile"
                       onClick={() => setIsMenuOpen(false)}
                       className="text-sm text-gray-600 hover:text-green-600"
                     >

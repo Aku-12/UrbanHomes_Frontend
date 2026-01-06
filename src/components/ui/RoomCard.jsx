@@ -27,6 +27,7 @@ const RoomCard = ({
     isFeatured,
     isVerified,
     isNew,
+    status,
     roomType,
     size,
     beds,
@@ -97,6 +98,18 @@ const RoomCard = ({
             {isFeaturedRoom && (
               <span className="absolute top-3 left-3 bg-green-600 text-white text-xs font-medium px-3 py-1 rounded">
                 Featured
+              </span>
+            )}
+
+            {/* Status Badge for Rented/Pending */}
+            {status === 'rented' && (
+              <span className="absolute top-3 left-3 bg-red-500 text-white text-xs font-medium px-3 py-1 rounded">
+                Rented
+              </span>
+            )}
+            {status === 'pending' && (
+              <span className="absolute top-3 left-3 bg-yellow-500 text-white text-xs font-medium px-3 py-1 rounded">
+                Pending
               </span>
             )}
 
@@ -171,8 +184,20 @@ const RoomCard = ({
 
         {/* Badges Container */}
         <div className="absolute top-3 left-3 flex gap-2">
+          {/* Status Badge for Rented/Pending */}
+          {status === 'rented' && (
+            <span className="bg-red-500 text-white text-xs font-medium px-3 py-1 rounded">
+              Rented
+            </span>
+          )}
+          {status === 'pending' && (
+            <span className="bg-yellow-500 text-white text-xs font-medium px-3 py-1 rounded">
+              Pending
+            </span>
+          )}
+
           {/* Featured Badge */}
-          {isFeaturedRoom && (
+          {isFeaturedRoom && status === 'available' && (
             <span className="bg-green-600 text-white text-xs font-medium px-3 py-1 rounded">
               Featured
             </span>

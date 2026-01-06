@@ -17,6 +17,7 @@ import {
   Check,
   ImageOff,
   Star,
+  Banknote,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Header, Footer } from '../components/layout';
@@ -161,11 +162,48 @@ const BookingPage = () => {
       const response = await bookingApi.createBooking(payload);
 
       if (response.data.success) {
-        toast.success('Booking created successfully!');
-        // Redirect to payment or confirmation page
-        navigate('/booking/confirmation', {
-          state: { booking: response.data.booking }
-        });
+        const booking = response.data.booking;
+        
+        // If payment method is esewa, initiate payment
+        if (bookingData.paymentMethod === 'esewa') {
+          toast.success('Booking created! Redirecting to eSewa...');
+          
+          // Initiate eSewa payment
+          const paymentResponse = await bookingApi.initiateEsewaPayment(booking._id);
+          
+          if (paymentResponse.data.success) {
+            const { paymentUrl, paymentData, devMode } = paymentResponse.data;
+            
+            // Development mode - simulate successful payment
+            if (devMode) {
+              toast.success('Dev Mode: Simulating successful payment...');
+              navigate(`/payment/success?data=${paymentResponse.data.mockData}`);
+              return;
+            }
+            
+            // Create and submit form to eSewa
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = paymentUrl;
+            
+            Object.entries(paymentData).forEach(([key, value]) => {
+              const input = document.createElement('input');
+              input.type = 'hidden';
+              input.name = key;
+              input.value = value;
+              form.appendChild(input);
+            });
+            
+            document.body.appendChild(form);
+            form.submit();
+          }
+        } else {
+          // For cash payment, go directly to confirmation
+          toast.success('Booking created successfully!');
+          navigate('/booking/confirmation', {
+            state: { booking }
+          });
+        }
       }
     } catch (error) {
       const errorMessage = error.response?.data?.message || 'Failed to create booking. Please try again.';
@@ -497,6 +535,31 @@ const BookingPage = () => {
                     <div>
                       <p className="font-medium text-gray-900">Esewa</p>
                       <p className="text-sm text-gray-500">Pay with your digital wallet Esewa.</p>
+                    </div>
+                  </label>
+
+                  {/* Cash Payment Option */}
+                  <label
+                    className={`flex items-center gap-4 p-4 border-2 rounded-lg cursor-pointer transition-colors ${
+                      bookingData.paymentMethod === 'cash'
+                        ? 'border-green-500 bg-green-50'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="paymentMethod"
+                      value="cash"
+                      checked={bookingData.paymentMethod === 'cash'}
+                      onChange={handleChange}
+                      className="w-5 h-5 text-green-600 focus:ring-green-500"
+                    />
+                    <div className="w-10 h-10 bg-yellow-500 rounded-lg flex items-center justify-center">
+                      <Banknote className="text-white" size={20} />
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900">Cash</p>
+                      <p className="text-sm text-gray-500">Pay in cash upon move-in.</p>
                     </div>
                   </label>
 

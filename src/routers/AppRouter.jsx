@@ -1,7 +1,7 @@
 import React from 'react'
 import { BrowserRouter, Route, Routes, Navigate } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
-import { ChangePassword, ForgotPassword, LandingPage, Login, Register, RoomListingPage, RoomDetailsPage, WishlistPage, BookingPage, BookingConfirmation, ContactPage, AboutPage, ProfilePage } from '../pages'
+import { ChangePassword, ForgotPassword, LandingPage, Login, Register, RoomListingPage, RoomDetailsPage, WishlistPage, BookingPage, BookingConfirmation, ContactPage, AboutPage, ProfilePage, PaymentSuccess, PaymentFailure } from '../pages'
 import { DashboardOverview, ManageRooms, BookingsManagement, UsersManagement, AddRoom, EditRoom } from '../pages/admin'
 import { WishlistProvider } from '../context'
 
@@ -62,6 +62,8 @@ function AppRouter() {
           <Route path="/wishlist" element={<WishlistPage />} />
           <Route path="/booking/:id" element={<BookingPage />} />
           <Route path="/booking/confirmation" element={<BookingConfirmation />} />
+          <Route path="/payment/success" element={<PaymentSuccess />} />
+          <Route path="/payment/failure" element={<PaymentFailure />} />
           <Route path="/contact" element={<ContactPage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/profile" element={<ProfilePage />} />
