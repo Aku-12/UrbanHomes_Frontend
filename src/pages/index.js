@@ -12,3 +12,5 @@ export { default as ProfilePage } from './ProfilePage';
 
 export { default as BookingPage } from './BookingPage';
 export { default as BookingConfirmation } from './BookingConfirmation';
+export { default as PaymentSuccess } from './PaymentSuccess';
+export { default as PaymentFailure } from './PaymentFailure';
