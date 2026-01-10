@@ -23,6 +23,7 @@ import toast from 'react-hot-toast';
 import { Header, Footer } from '../components/layout';
 import { useRoom } from '../hooks/useRooms';
 import bookingApi from '../api/bookingApi';
+import esewaLogo from '../assets/esewalogo.png';
 
 const PLACEHOLDER_IMAGE = 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&h=500&fit=crop';
 
@@ -529,11 +530,11 @@ const BookingPage = () => {
                       onChange={handleChange}
                       className="w-5 h-5 text-green-600 focus:ring-green-500"
                     />
-                    <div className="w-10 h-10 bg-green-600 rounded-lg flex items-center justify-center">
-                      <span className="text-white font-bold text-sm">e</span>
+                    <div className="w-10 h-10 rounded-lg overflow-hidden flex items-center justify-center bg-white">
+                      <img src={esewaLogo} alt="eSewa" className="w-full h-full object-contain" />
                     </div>
                     <div>
-                      <p className="font-medium text-gray-900">Esewa</p>
+                      <p className="font-medium text-gray-900">eSewa</p>
                       <p className="text-sm text-gray-500">Pay with your digital wallet Esewa.</p>
                     </div>
                   </label>

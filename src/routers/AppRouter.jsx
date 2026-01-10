@@ -1,9 +1,10 @@
 import React from 'react'
 import { BrowserRouter, Route, Routes, Navigate } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
-import { ChangePassword, ForgotPassword, LandingPage, Login, Register, RoomListingPage, RoomDetailsPage, WishlistPage, BookingPage, BookingConfirmation, ContactPage, AboutPage, ProfilePage, PaymentSuccess, PaymentFailure } from '../pages'
-import { DashboardOverview, ManageRooms, BookingsManagement, UsersManagement, AddRoom, EditRoom } from '../pages/admin'
-import { WishlistProvider } from '../context'
+import { ChangePassword, ForgotPassword, LandingPage, Login, Register, RoomListingPage, RoomDetailsPage, WishlistPage, BookingPage, BookingConfirmation, ContactPage, AboutPage, ProfilePage, PaymentSuccess, PaymentFailure, ContactLandlordPage } from '../pages'
+import NotificationsPage from '../pages/NotificationsPage'
+import { DashboardOverview, ManageRooms, BookingsManagement, UsersManagement, AddRoom, EditRoom, MessagesManagement } from '../pages/admin'
+import { WishlistProvider, SocketProvider } from '../context'
 
 // Admin Route Protection Component
 const AdminRoute = ({ children }) => {
@@ -14,7 +15,7 @@ const AdminRoute = ({ children }) => {
     return <Navigate to="/login" replace />;
   }
 
-  if (user.role !== 'admin') {
+  if (user.role !== 'admin' && user.role !== 'landlord') {
     return <Navigate to="/" replace />;
   }
 
@@ -24,6 +25,7 @@ const AdminRoute = ({ children }) => {
 function AppRouter() {
   return (
    <BrowserRouter>
+      <SocketProvider>
       <WishlistProvider>
         <Toaster
           position="bottom-right"
@@ -60,11 +62,13 @@ function AppRouter() {
           <Route path="/rooms" element={<RoomListingPage />} />
           <Route path="/rooms/:id" element={<RoomDetailsPage />} />
           <Route path="/wishlist" element={<WishlistPage />} />
+          <Route path="/notifications" element={<NotificationsPage />} />
           <Route path="/booking/:id" element={<BookingPage />} />
           <Route path="/booking/confirmation" element={<BookingConfirmation />} />
           <Route path="/payment/success" element={<PaymentSuccess />} />
           <Route path="/payment/failure" element={<PaymentFailure />} />
           <Route path="/contact" element={<ContactPage />} />
+          <Route path="/contact-landlord/:roomId" element={<ContactLandlordPage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/profile" element={<ProfilePage />} />
 
@@ -74,9 +78,11 @@ function AppRouter() {
           <Route path="/admin/rooms/add" element={<AdminRoute><AddRoom /></AdminRoute>} />
           <Route path="/admin/rooms/edit/:id" element={<AdminRoute><EditRoom /></AdminRoute>} />
           <Route path="/admin/bookings" element={<AdminRoute><BookingsManagement /></AdminRoute>} />
+          <Route path="/admin/messages" element={<AdminRoute><MessagesManagement /></AdminRoute>} />
           <Route path="/admin/users" element={<AdminRoute><UsersManagement /></AdminRoute>} />
         </Routes>
       </WishlistProvider>
+      </SocketProvider>
    </BrowserRouter>
   )
 }

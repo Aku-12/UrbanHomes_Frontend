@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Filter, Grid, List, ChevronDown } from 'lucide-react';
 import { Header, Footer } from '../components/layout';
 import { RoomCard, Input, Checkbox } from '../components/ui';
@@ -6,6 +7,7 @@ import { useRooms } from '../hooks/useRooms';
 import { useWishlist } from '../context';
 
 const RoomListingPage = () => {
+  const [searchParams] = useSearchParams();
   const [viewMode, setViewMode] = useState('grid');
   const [showFilters, setShowFilters] = useState(true);
   const { toggleWishlist, isInWishlist } = useWishlist();
@@ -29,6 +31,17 @@ const RoomListingPage = () => {
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
+
+  // Read city from URL query parameter on mount
+  useEffect(() => {
+    const cityFromUrl = searchParams.get('city');
+    if (cityFromUrl) {
+      setFilters((prev) => ({
+        ...prev,
+        city: cityFromUrl,
+      }));
+    }
+  }, [searchParams]);
 
   // Room types for dropdown
   const roomTypes = ['All Types', 'Studio', 'Private', 'Shared', '1BHK', '2BHK', '3BHK', 'Apartment'];

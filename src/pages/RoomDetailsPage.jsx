@@ -264,7 +264,13 @@ const RoomDetailsPage = () => {
   };
 
   const handleInquiry = () => {
-    toast.success('Inquiry sent to landlord!');
+    const token = localStorage.getItem('token');
+    if (!token) {
+      toast.error('Please login to contact the landlord');
+      navigate('/login');
+      return;
+    }
+    navigate(`/contact-landlord/${id}`);
   };
 
   const nextImage = () => {

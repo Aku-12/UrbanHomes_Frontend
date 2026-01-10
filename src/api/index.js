@@ -6,3 +6,5 @@ export { default as roomApi } from './roomApi';
 export { default as bookingApi } from './bookingApi';
 export { default as contactApi } from './contactApi';
 export { default as profileApi } from './profileApi';
+export { default as messageApi } from './messageApi';
+export { default as notificationApi } from './notificationApi';

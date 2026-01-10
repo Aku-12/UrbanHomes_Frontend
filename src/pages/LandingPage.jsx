@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import {
   Search,
   MapPin,
@@ -9,33 +9,49 @@ import {
   Star,
   ArrowRight,
   Loader2,
+  X,
 } from 'lucide-react';
 import { Header, Footer } from '../components/layout';
 import { Button, RoomCard } from '../components/ui';
 import { useFeaturedRooms } from '../hooks/useFeaturedRooms';
 import { usePopularRooms } from '../hooks/usePopularRooms';
+import { useRooms } from '../hooks/useRooms';
 import { useWishlist } from '../context';
 
 const LandingPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
-  const navigate = useNavigate();
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const { toggleWishlist, isInWishlist } = useWishlist();
 
   // Fetch featured and popular rooms from API
   const { data: featuredRooms, isLoading: featuredLoading, error: featuredError } = useFeaturedRooms(4);
   const { data: popularRooms, isLoading: popularLoading, error: popularError } = usePopularRooms('Kathmandu', 4);
 
+  // Fetch filtered rooms based on search query
+  const searchParams = debouncedSearchQuery.trim().length >= 2
+    ? { city: debouncedSearchQuery.trim(), limit: 8 }
+    : {};
+
+  const { data: searchResults, isLoading: searchLoading } = useRooms(searchParams);
+
   const handleFavoriteClick = (room) => {
     toggleWishlist(room);
   };
 
-  const handleSearch = () => {
-    if (searchQuery.trim()) {
-      navigate(`/rooms?city=${encodeURIComponent(searchQuery.trim())}`);
+  // Debounce search query for live filtering
+  useEffect(() => {
+    // Only debounce if there's a query
+    if (searchQuery.trim().length >= 2) {
+      const debounceTimer = setTimeout(() => {
+        setDebouncedSearchQuery(searchQuery);
+      }, 600); // Wait 600ms after user stops typing
+
+      return () => clearTimeout(debounceTimer);
     } else {
-      navigate('/rooms');
+      // Clear debounced query if search is cleared
+      setDebouncedSearchQuery('');
     }
-  };
+  }, [searchQuery]);
 
   // Stats data
   const stats = [
@@ -104,10 +120,13 @@ const LandingPage = () => {
     },
   ];
 
-  // Use featured rooms if available, fallback to popular rooms
-  const displayRooms = featuredRooms?.length > 0 ? featuredRooms : popularRooms;
-  const isLoading = featuredLoading || popularLoading;
-  const hasError = featuredError && popularError;
+  // Determine which rooms to display
+  const isSearchActive = debouncedSearchQuery.trim().length >= 2;
+  const displayRooms = isSearchActive
+    ? searchResults?.rooms || []
+    : (featuredRooms?.length > 0 ? featuredRooms : popularRooms);
+  const isLoading = isSearchActive ? searchLoading : (featuredLoading || popularLoading);
+  const hasError = isSearchActive ? false : (featuredError && popularError);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -128,7 +147,7 @@ const LandingPage = () => {
               </p>
 
               {/* Search Bar */}
-              <div className="flex gap-2 mb-6">
+              <div className="mb-6">
                 <div className="flex-1 relative">
                   <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                   <input
@@ -136,9 +155,27 @@ const LandingPage = () => {
                     placeholder="Enter city or area..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-10 pr-3 py-3 text-sm rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    className="w-full pl-10 pr-10 py-3 text-sm rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   />
+                  {searchQuery && (
+                    <button
+                      onClick={() => setSearchQuery('')}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                    >
+                      <X size={18} />
+                    </button>
+                  )}
                 </div>
+                {searchQuery.trim().length > 0 && searchQuery.trim().length < 2 && (
+                  <p className="text-xs text-gray-500 mt-2 ml-1">
+                    Type at least 2 characters to search
+                  </p>
+                )}
+                {isSearchActive && (
+                  <p className="text-xs text-green-600 mt-2 ml-1">
+                    {searchLoading ? `Searching for rooms in ${debouncedSearchQuery}...` : `Showing results for ${debouncedSearchQuery}`}
+                  </p>
+                )}
               </div>
 
               {/* Stats */}
@@ -204,10 +241,13 @@ const LandingPage = () => {
           <div className="flex items-center justify-between mb-8">
             <div>
               <span className="text-green-600 text-sm font-medium uppercase tracking-wider">
-                Featured
+                {isSearchActive ? 'Search Results' : 'Featured'}
               </span>
               <h2 className="text-2xl font-bold text-gray-900 mt-1">
-                Popular Rooms Near You
+                {isSearchActive
+                  ? `Rooms in ${debouncedSearchQuery}`
+                  : 'Popular Rooms Near You'
+                }
               </h2>
             </div>
             <Link
@@ -250,7 +290,11 @@ const LandingPage = () => {
           {/* Empty State */}
           {!isLoading && !hasError && (!displayRooms || displayRooms.length === 0) && (
             <div className="text-center py-12">
-              <p className="text-gray-500">No rooms available at the moment.</p>
+              <p className="text-gray-500">
+                {isSearchActive
+                  ? `No rooms found in ${debouncedSearchQuery}. Try searching for a different city.`
+                  : 'No rooms available at the moment.'}
+              </p>
             </div>
           )}
 

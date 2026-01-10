@@ -1,17 +1,20 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Menu, X, Heart, Bell, User, LogOut } from 'lucide-react';
-import { Button } from '../ui';
-import { authApi } from '../../api';
-import { useWishlist } from '../../context';
+import { Button, NotificationDropdown } from '../ui';
+import { authApi, notificationApi } from '../../api';
+import { useWishlist, useSocket } from '../../context';
 import urbanLogo from '../../assets/urbanlogo.svg';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
+  const [isNotificationDropdownOpen, setIsNotificationDropdownOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
   const location = useLocation();
   const navigate = useNavigate();
   const { wishlistCount } = useWishlist();
+  const { socket, isConnected } = useSocket();
 
   const isAuthenticated = authApi.isAuthenticated();
   const user = authApi.getStoredUser();
@@ -22,6 +25,42 @@ const Header = () => {
     { name: 'Contact', path: '/contact' },
     { name: 'About Us', path: '/about' },
   ];
+
+  // Fetch unread notification count on mount
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchUnreadCount();
+    }
+  }, [isAuthenticated]);
+
+  // Listen for real-time notifications via Socket.io
+  useEffect(() => {
+    if (socket && isConnected) {
+      // Listen for new notifications
+      socket.on('new_notification', (notification) => {
+        setUnreadCount((prev) => prev + 1);
+      });
+
+      // Listen for unread count updates
+      socket.on('unread_count_updated', (data) => {
+        setUnreadCount(data.count);
+      });
+
+      return () => {
+        socket.off('new_notification');
+        socket.off('unread_count_updated');
+      };
+    }
+  }, [socket, isConnected]);
+
+  const fetchUnreadCount = async () => {
+    try {
+      const response = await notificationApi.getUnreadCount();
+      setUnreadCount(response.data.count);
+    } catch (error) {
+      console.error('Error fetching unread count:', error);
+    }
+  };
 
   const isActive = (path) => location.pathname === path;
 
@@ -74,11 +113,26 @@ const Header = () => {
                 </Link>
 
                 {/* Notifications */}
-                <button className="p-2 text-gray-600 hover:text-green-600 transition-colors relative">
-                  <Bell size={20} />
-                  {/* Notification badge - uncomment when needed */}
-                  {/* <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span> */}
-                </button>
+                <div className="relative">
+                  <button
+                    onClick={() => setIsNotificationDropdownOpen(!isNotificationDropdownOpen)}
+                    className="p-2 text-gray-600 hover:text-green-600 transition-colors relative"
+                  >
+                    <Bell size={20} className={unreadCount > 0 ? 'text-green-600' : ''} />
+                    {unreadCount > 0 && (
+                      <span className="absolute top-0 right-0 w-5 h-5 bg-green-600 text-white text-xs font-medium rounded-full flex items-center justify-center">
+                        {unreadCount > 9 ? '9+' : unreadCount}
+                      </span>
+                    )}
+                  </button>
+
+                  <NotificationDropdown
+                    isOpen={isNotificationDropdownOpen}
+                    onClose={() => setIsNotificationDropdownOpen(false)}
+                    unreadCount={unreadCount}
+                    onUnreadCountChange={setUnreadCount}
+                  />
+                </div>
 
                 {/* Profile Dropdown */}
                 <div className="relative">

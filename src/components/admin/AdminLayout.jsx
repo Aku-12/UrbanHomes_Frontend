@@ -9,9 +9,11 @@ import {
   Search,
   Bell,
   Menu,
-  X
+  X,
+  MessageCircle
 } from 'lucide-react';
 import { adminApi } from '../../api';
+import api from '../../api/axios';
 import urbanLogo from '../../assets/urbanlogo.svg';
 
 const AdminLayout = ({ children }) => {
@@ -20,19 +22,31 @@ const AdminLayout = ({ children }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [pendingBookingsCount, setPendingBookingsCount] = useState(0);
+  const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
 
   const user = JSON.parse(localStorage.getItem('user') || '{}');
 
   useEffect(() => {
-    const fetchPendingBookings = async () => {
+    const fetchCounts = async () => {
       try {
-        const response = await adminApi.getAllBookings({ status: 'pending', limit: 1 });
-        setPendingBookingsCount(response.data.total || 0);
+        // Fetch pending bookings
+        const bookingsResponse = await adminApi.getAllBookings({ status: 'pending', limit: 1 });
+        setPendingBookingsCount(bookingsResponse.data.total || 0);
+        
+        // Fetch unread messages
+        const messagesResponse = await api.get('/messages/conversations');
+        const conversations = messagesResponse.data.conversations || [];
+        const totalUnread = conversations.reduce((sum, conv) => sum + (conv.unreadCount || 0), 0);
+        setUnreadMessagesCount(totalUnread);
       } catch (error) {
-        console.error('Failed to fetch pending bookings count:', error);
+        console.error('Failed to fetch counts:', error);
       }
     };
-    fetchPendingBookings();
+    fetchCounts();
+    
+    // Poll for updates every 30 seconds
+    const interval = setInterval(fetchCounts, 30000);
+    return () => clearInterval(interval);
   }, [location.pathname]);
 
   const menuItems = [
@@ -46,7 +60,8 @@ const AdminLayout = ({ children }) => {
       section: 'MANAGEMENT',
       items: [
         { path: '/admin/rooms', label: 'Manage Rooms', icon: Home },
-        { path: '/admin/bookings', label: 'Bookings', icon: Calendar, badge: true },
+        { path: '/admin/bookings', label: 'Bookings', icon: Calendar, badge: 'bookings' },
+        { path: '/admin/messages', label: 'Messages', icon: MessageCircle, badge: 'messages' },
         { path: '/admin/users', label: 'Users Management', icon: Users },
       ]
     },
@@ -148,9 +163,14 @@ const AdminLayout = ({ children }) => {
                       >
                         <Icon className={`w-5 h-5 ${isActive(item.path) ? 'text-white' : 'text-gray-400'}`} />
                         <span>{item.label}</span>
-                        {item.badge && pendingBookingsCount > 0 && (
+                        {item.badge === 'bookings' && pendingBookingsCount > 0 && (
                           <span className="ml-auto bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
                             {pendingBookingsCount > 99 ? '99+' : pendingBookingsCount}
+                          </span>
+                        )}
+                        {item.badge === 'messages' && unreadMessagesCount > 0 && (
+                          <span className="ml-auto bg-green-600 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
+                            {unreadMessagesCount > 99 ? '99+' : unreadMessagesCount}
                           </span>
                         )}
                       </Link>

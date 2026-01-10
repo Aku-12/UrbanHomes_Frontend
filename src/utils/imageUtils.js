@@ -8,6 +8,18 @@ export const getBaseUrl = () => {
 export const getImageUrl = (imagePath) => {
   if (!imagePath) return null;
   
+  // Handle case where imagePath is an object (e.g., {url: '...'} or {path: '...'})
+  if (typeof imagePath === 'object') {
+    imagePath = imagePath.url || imagePath.path || imagePath.src || null;
+    if (!imagePath) return null;
+  }
+  
+  // Ensure imagePath is a string
+  if (typeof imagePath !== 'string') {
+    console.warn('getImageUrl received non-string:', imagePath);
+    return null;
+  }
+  
   // If it's already a full URL, return it
   if (imagePath.startsWith('http')) {
     return imagePath;
