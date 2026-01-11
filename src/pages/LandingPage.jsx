@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Search,
@@ -22,6 +22,7 @@ const LandingPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const { toggleWishlist, isInWishlist } = useWishlist();
+  const roomsSectionRef = useRef(null);
 
   // Fetch featured and popular rooms from API
   const { data: featuredRooms, isLoading: featuredLoading, error: featuredError } = useFeaturedRooms(4);
@@ -52,6 +53,19 @@ const LandingPage = () => {
       setDebouncedSearchQuery('');
     }
   }, [searchQuery]);
+
+  // Handle Enter key press to scroll to rooms section
+  const handleSearchKeyPress = (e) => {
+    if (e.key === 'Enter' && searchQuery.trim().length >= 2) {
+      // Scroll to the rooms section when Enter is pressed
+      if (roomsSectionRef.current) {
+        roomsSectionRef.current.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start',
+        });
+      }
+    }
+  };
 
   // Stats data
   const stats = [
@@ -155,6 +169,7 @@ const LandingPage = () => {
                     placeholder="Enter city or area..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
+                    onKeyPress={handleSearchKeyPress}
                     className="w-full pl-10 pr-10 py-3 text-sm rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   />
                   {searchQuery && (
@@ -236,7 +251,7 @@ const LandingPage = () => {
       </section>
 
       {/* Popular Rooms Section */}
-      <section className="py-12 bg-gray-50">
+      <section ref={roomsSectionRef} className="py-12 bg-gray-50">
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center justify-between mb-8">
             <div>
