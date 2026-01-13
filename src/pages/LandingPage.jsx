@@ -385,15 +385,6 @@ const LandingPage = () => {
                 Start Browsing
               </Button>
             </Link>
-            <Link to="/register">
-              <Button
-                variant="outline"
-                size="lg"
-                className="border-white text-white hover:bg-white hover:text-green-600"
-              >
-                List Your Room
-              </Button>
-            </Link>
           </div>
         </div>
       </section>
