@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Menu, X, Heart, Bell, User, LogOut } from 'lucide-react';
+import { Menu, X, Heart, Bell, User, LogOut, Calendar } from 'lucide-react';
 import { Button, NotificationDropdown } from '../ui';
 import { authApi, notificationApi } from '../../api';
 import { useWishlist, useSocket } from '../../context';
@@ -158,6 +158,14 @@ const Header = () => {
                       >
                         My Profile
                       </Link>
+                      <Link
+                        to="/my-bookings"
+                        onClick={() => setIsProfileDropdownOpen(false)}
+                        className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                      >
+                        <Calendar size={16} />
+                        My Bookings
+                      </Link>
                       <button
                         onClick={handleLogout}
                         className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-50 flex items-center gap-2"
@@ -229,11 +237,19 @@ const Header = () => {
                       )}
                     </Link>
                     <Link
-                      to="/dashboard"
+                      to="/profile"
                       onClick={() => setIsMenuOpen(false)}
                       className="text-sm text-gray-600 hover:text-green-600"
                     >
                       My Profile
+                    </Link>
+                    <Link
+                      to="/my-bookings"
+                      onClick={() => setIsMenuOpen(false)}
+                      className="flex items-center gap-2 text-sm text-gray-600 hover:text-green-600"
+                    >
+                      <Calendar size={18} />
+                      My Bookings
                     </Link>
                     <button
                       onClick={() => {

@@ -8,3 +8,4 @@ export { default as contactApi } from './contactApi';
 export { default as profileApi } from './profileApi';
 export { default as messageApi } from './messageApi';
 export { default as notificationApi } from './notificationApi';
+export { default as reviewApi } from './reviewApi';

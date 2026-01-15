@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   MapPin,
@@ -33,6 +33,8 @@ import toast from 'react-hot-toast';
 import { Header, Footer } from '../components/layout';
 import { useRoom } from '../hooks/useRooms';
 import { useWishlist } from '../context';
+import { reviewApi } from '../api';
+import { getImageUrl } from '../utils/imageUtils';
 
 // Fix for default marker icon in Leaflet with Vite
 const defaultIcon = L.icon({
@@ -74,6 +76,37 @@ const RoomDetailsPage = () => {
   const [showAllReviews, setShowAllReviews] = useState(false);
   const [showFullDescription, setShowFullDescription] = useState(false);
   const [imageErrors, setImageErrors] = useState({});
+
+  // Reviews state
+  const [reviews, setReviews] = useState([]);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
+  const [ratingDistribution, setRatingDistribution] = useState([]);
+
+  // Fetch reviews when room ID is available
+  useEffect(() => {
+    const fetchReviews = async () => {
+      if (!id) return;
+      try {
+        setReviewsLoading(true);
+        const response = await reviewApi.getRoomReviews(id, { limit: 50 });
+        setReviews(response.data.reviews || []);
+        setRatingDistribution(response.data.ratingDistribution || []);
+      } catch (error) {
+        console.error('Failed to fetch reviews:', error);
+      } finally {
+        setReviewsLoading(false);
+      }
+    };
+
+    fetchReviews();
+  }, [id]);
+
+  // Format review date
+  const formatReviewDate = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  };
 
   // Booking form state
   const [bookingData, setBookingData] = useState({
@@ -210,24 +243,6 @@ const RoomDetailsPage = () => {
   const serviceFee = 100;
   const totalPrice = room.price + securityDeposit + serviceFee;
 
-  // Mock reviews (would come from API)
-  const reviews = [
-    {
-      id: 1,
-      user: { name: 'Ram Prasad', avatar: null },
-      date: 'November 2025',
-      rating: 5,
-      comment: 'Absolutely stunning room with all the amenities!',
-    },
-    {
-      id: 2,
-      user: { name: 'Sita Rana', avatar: null },
-      date: 'October 2025',
-      comment:
-        'This studio exceeded all my expectations. The natural light streaming through those huge windows every morning was magical.',
-      rating: 5,
-    },
-  ];
 
   const handleShare = () => {
     if (navigator.share) {
@@ -572,49 +587,104 @@ const RoomDetailsPage = () => {
                 </div>
               </div>
 
+              {/* Rating Distribution */}
+              {ratingDistribution.length > 0 && (
+                <div className="mb-6 space-y-2">
+                  {[5, 4, 3, 2, 1].map((rating) => {
+                    const ratingData = ratingDistribution.find(r => r._id === rating);
+                    const count = ratingData?.count || 0;
+                    const percentage = room.rating?.count > 0 ? (count / room.rating.count) * 100 : 0;
+                    return (
+                      <div key={rating} className="flex items-center gap-2 text-sm">
+                        <span className="w-3">{rating}</span>
+                        <Star size={12} className="text-yellow-400 fill-yellow-400" />
+                        <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-yellow-400 rounded-full"
+                            style={{ width: `${percentage}%` }}
+                          />
+                        </div>
+                        <span className="w-8 text-gray-500 text-xs">{count}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
               {/* Reviews List */}
               <div className="space-y-6">
-                {(showAllReviews ? reviews : reviews.slice(0, 2)).map((review) => (
-                  <div key={review.id} className="border-b border-gray-100 pb-6 last:border-0">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
-                          <span className="text-gray-600 font-medium">
-                            {review.user.name.charAt(0)}
-                          </span>
-                        </div>
-                        <div>
-                          <p className="font-medium text-gray-900">{review.user.name}</p>
-                          <p className="text-sm text-gray-500">{review.date}</p>
-                        </div>
-                      </div>
-                      <div className="flex gap-0.5">
-                        {[...Array(5)].map((_, i) => (
-                          <Star
-                            key={i}
-                            size={14}
-                            className={
-                              i < review.rating
-                                ? 'text-yellow-400 fill-yellow-400'
-                                : 'text-gray-300'
-                            }
-                          />
-                        ))}
-                      </div>
-                    </div>
-                    <p className="text-gray-600">{review.comment}</p>
+                {reviewsLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
                   </div>
-                ))}
+                ) : reviews.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    <Star className="w-12 h-12 mx-auto text-gray-300 mb-3" />
+                    <p>No reviews yet</p>
+                    <p className="text-sm">Be the first to review this room!</p>
+                  </div>
+                ) : (
+                  (showAllReviews ? reviews : reviews.slice(0, 3)).map((review) => (
+                    <div key={review._id} className="border-b border-gray-100 pb-6 last:border-0">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden">
+                            {review.user?.avatar ? (
+                              <img
+                                src={getImageUrl(review.user.avatar)}
+                                alt={review.user.firstName}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <span className="text-gray-600 font-medium">
+                                {review.user?.firstName?.charAt(0) || 'U'}
+                              </span>
+                            )}
+                          </div>
+                          <div>
+                            <p className="font-medium text-gray-900">
+                              {review.user?.firstName} {review.user?.lastName}
+                            </p>
+                            <p className="text-sm text-gray-500">{formatReviewDate(review.createdAt)}</p>
+                          </div>
+                        </div>
+                        <div className="flex gap-0.5">
+                          {[...Array(5)].map((_, i) => (
+                            <Star
+                              key={i}
+                              size={14}
+                              className={
+                                i < review.rating
+                                  ? 'text-yellow-400 fill-yellow-400'
+                                  : 'text-gray-300'
+                              }
+                            />
+                          ))}
+                        </div>
+                      </div>
+                      <p className="text-gray-600">{review.comment}</p>
+                      {/* Detailed ratings if available */}
+                      {(review.cleanliness || review.communication || review.location || review.value) && (
+                        <div className="flex gap-4 mt-3 text-xs text-gray-500">
+                          {review.cleanliness && <span>Cleanliness: {review.cleanliness}/5</span>}
+                          {review.communication && <span>Communication: {review.communication}/5</span>}
+                          {review.location && <span>Location: {review.location}/5</span>}
+                          {review.value && <span>Value: {review.value}/5</span>}
+                        </div>
+                      )}
+                    </div>
+                  ))
+                )}
               </div>
 
-              {room.rating?.count > 2 && (
+              {reviews.length > 3 && (
                 <button
                   onClick={() => setShowAllReviews(!showAllReviews)}
                   className="mt-4 w-full py-3 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors"
                 >
                   {showAllReviews
                     ? 'Show less'
-                    : `Show all ${room.rating.count} reviews`}
+                    : `Show all ${reviews.length} reviews`}
                 </button>
               )}
             </div>

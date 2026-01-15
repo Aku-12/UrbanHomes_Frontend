@@ -2,6 +2,7 @@ import React from 'react'
 import { BrowserRouter, Route, Routes, Navigate } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
 import { ChangePassword, ForgotPassword, LandingPage, Login, Register, RoomListingPage, RoomDetailsPage, WishlistPage, BookingPage, BookingConfirmation, ContactPage, AboutPage, ProfilePage, PaymentSuccess, PaymentFailure, ContactLandlordPage } from '../pages'
+import MyBookingsPage from '../pages/MyBookingsPage'
 import NotificationsPage from '../pages/NotificationsPage'
 import { DashboardOverview, ManageRooms, BookingsManagement, UsersManagement, AddRoom, EditRoom, MessagesManagement } from '../pages/admin'
 import { WishlistProvider, SocketProvider } from '../context'
@@ -71,6 +72,7 @@ function AppRouter() {
           <Route path="/contact-landlord/:roomId" element={<ContactLandlordPage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/my-bookings" element={<MyBookingsPage />} />
 
           {/* Admin Routes */}
           <Route path="/admin" element={<AdminRoute><DashboardOverview /></AdminRoute>} />
