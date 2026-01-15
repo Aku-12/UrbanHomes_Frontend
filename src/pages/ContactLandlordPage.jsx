@@ -182,7 +182,8 @@ const ContactLandlordPage = () => {
     }
   };
 
-  const currentUserId = JSON.parse(localStorage.getItem('user'))?._id;
+  const storedUser = JSON.parse(localStorage.getItem('user'));
+  const currentUserId = storedUser?.id || storedUser?._id;
 
   if (loading) {
     return (
@@ -305,18 +306,10 @@ const ContactLandlordPage = () => {
           <div className="lg:col-span-2">
             <div className="bg-white rounded-xl shadow-sm overflow-hidden flex flex-col h-[600px]">
               {/* Messages Header */}
-              <div className="p-4 border-b">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <MessageCircle className="w-5 h-5 text-green-600 mr-2" />
-                    <h3 className="font-semibold text-gray-900">Messages</h3>
-                  </div>
-                  <div className={`flex items-center gap-1.5 px-2 py-1 rounded-full text-xs ${
-                    isConnected ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
-                  }`}>
-                    {isConnected ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
-                    {isConnected ? 'Live' : 'Offline'}
-                  </div>
+              <div className="p-4 border-b border-gray-100">
+                <div className="flex items-center">
+                  <MessageCircle className="w-5 h-5 text-green-600 mr-2" />
+                  <h3 className="font-semibold text-gray-900">Messages</h3>
                 </div>
                 {room && (
                   <div className="flex items-center mt-3 p-3 bg-gray-50 rounded-lg">
