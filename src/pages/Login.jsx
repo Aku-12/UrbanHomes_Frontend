@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { Input, Button, Checkbox } from '../components/ui';
+import { Input, Button, Checkbox, GoogleLoginButton } from '../components/ui';
 import { authApi } from '../api';
 import urbanLogo from '../assets/urbanlogo.svg';
 import loginBg from '../assets/images/login-bg.jpg';
@@ -121,6 +121,28 @@ const Login = () => {
             >
               Log In
             </Button>
+
+            {/* Divider */}
+            <div className="relative my-6">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-300"></div>
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-4 bg-white text-gray-500">or log in with</span>
+              </div>
+            </div>
+
+            {/* Google Login Button */}
+            <GoogleLoginButton
+              onSuccess={(response) => {
+                if (response.user?.role === 'admin') {
+                  navigate('/admin');
+                } else {
+                  navigate('/');
+                }
+              }}
+              buttonText="signin_with"
+            />
           </form>
 
           {/* Sign Up Link */}
