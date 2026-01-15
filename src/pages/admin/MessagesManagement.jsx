@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef, Component } from 'react';
-import { 
-  MessageCircle, 
-  Send, 
-  Search, 
+import {
+  MessageCircle,
+  Send,
+  Search,
   User,
   Clock,
   Home,
@@ -12,13 +12,17 @@ import {
   RefreshCw,
   AlertCircle,
   Wifi,
-  WifiOff
+  WifiOff,
+  Mail,
+  Phone,
+  Calendar
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import AdminLayout from '../../components/admin/AdminLayout';
 import { getImageUrl } from '../../utils/imageUtils';
 import { useSocket } from '../../context';
 import api from '../../api/axios';
+import { contactApi } from '../../api';
 
 // Error Boundary Component
 class ErrorBoundary extends Component {
@@ -58,6 +62,10 @@ class ErrorBoundary extends Component {
 }
 
 const MessagesManagementContent = () => {
+  // Tab state
+  const [activeTab, setActiveTab] = useState('room'); // 'room' or 'contact'
+
+  // Room conversations state
   const [conversations, setConversations] = useState([]);
   const [selectedConversation, setSelectedConversation] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -72,6 +80,14 @@ const MessagesManagementContent = () => {
   const messagesEndRef = useRef(null);
   const selectedConversationRef = useRef(null);
   const typingTimeoutRef = useRef(null);
+
+  // Contact inquiries state
+  const [contacts, setContacts] = useState([]);
+  const [selectedContact, setSelectedContact] = useState(null);
+  const [contactsLoading, setContactsLoading] = useState(false);
+  const [contactSearchQuery, setContactSearchQuery] = useState('');
+  const [replyMessage, setReplyMessage] = useState('');
+  const [sendingReply, setSendingReply] = useState(false);
 
   // Safely get socket - may be null if not connected
   const socketContext = useSocket() || {};
@@ -307,6 +323,92 @@ const MessagesManagementContent = () => {
     }
   };
 
+  // Fetch contact inquiries
+  const fetchContacts = async () => {
+    try {
+      setContactsLoading(true);
+      const response = await contactApi.getContacts({ limit: 100 });
+      setContacts(response.data || []);
+    } catch (error) {
+      console.error('Failed to fetch contacts:', error);
+      toast.error('Failed to load contact inquiries');
+    } finally {
+      setContactsLoading(false);
+    }
+  };
+
+  // Fetch contacts when tab changes to 'contact'
+  useEffect(() => {
+    if (activeTab === 'contact' && contacts.length === 0) {
+      fetchContacts();
+    }
+  }, [activeTab]);
+
+  // Handle select contact
+  const handleSelectContact = async (contact) => {
+    setSelectedContact(contact);
+    setReplyMessage('');
+    // Mark as read if unread
+    if (contact.status === 'unread') {
+      try {
+        await contactApi.updateContactStatus(contact._id, 'read');
+        setContacts(prev => prev.map(c =>
+          c._id === contact._id ? { ...c, status: 'read' } : c
+        ));
+      } catch (error) {
+        console.error('Failed to update contact status:', error);
+      }
+    }
+  };
+
+  // Handle send reply
+  const handleSendReply = async () => {
+    if (!replyMessage.trim() || !selectedContact) return;
+
+    try {
+      setSendingReply(true);
+      const response = await contactApi.replyToContact(selectedContact._id, replyMessage);
+      toast.success('Reply sent successfully!');
+      setReplyMessage('');
+      // Update the selected contact with the new reply
+      setSelectedContact(response.data);
+      // Update contacts list
+      setContacts(prev => prev.map(c =>
+        c._id === selectedContact._id ? response.data : c
+      ));
+    } catch (error) {
+      console.error('Failed to send reply:', error);
+      toast.error('Failed to send reply');
+    } finally {
+      setSendingReply(false);
+    }
+  };
+
+  // Format date for contact messages
+  const formatContactDate = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    });
+  };
+
+  // Filter contacts
+  const filteredContacts = contacts.filter(contact => {
+    const name = contact.name?.toLowerCase() || '';
+    const email = contact.email?.toLowerCase() || '';
+    const subject = contact.subject?.toLowerCase() || '';
+    const query = contactSearchQuery.toLowerCase();
+    return name.includes(query) || email.includes(query) || subject.includes(query);
+  });
+
+  // Get unread contacts count
+  const unreadContactsCount = contacts.filter(c => c.status === 'unread').length;
+
   const filteredConversations = conversations.filter(conv => {
     const tenantName = `${conv.tenant?.firstName || ''} ${conv.tenant?.lastName || ''}`.toLowerCase();
     const roomTitle = conv.room?.title?.toLowerCase() || '';
@@ -326,22 +428,64 @@ const MessagesManagementContent = () => {
       <div className="h-[calc(100vh-80px)] flex flex-col">
         {/* Header */}
         <div className="bg-white border-b border-gray-100 px-6 py-4">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between mb-4">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Messages</h1>
               <p className="text-gray-500 text-sm mt-1">
                 Respond to tenant inquiries and messages
               </p>
             </div>
-            <div className="flex items-center gap-2 text-sm text-gray-500">
-              <MessageCircle className="w-4 h-4" />
-              <span>{conversations.length} conversations</span>
+            <div className="flex items-center gap-4 text-sm text-gray-500">
+              <div className="flex items-center gap-2">
+                <MessageCircle className="w-4 h-4" />
+                <span>{conversations.length} conversations</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Mail className="w-4 h-4" />
+                <span>{contacts.length} inquiries</span>
+              </div>
             </div>
+          </div>
+          {/* Tabs */}
+          <div className="flex gap-4 border-b border-gray-200">
+            <button
+              onClick={() => { setActiveTab('room'); setSelectedContact(null); }}
+              className={`pb-3 px-1 text-sm font-medium transition-colors relative ${
+                activeTab === 'room'
+                  ? 'text-green-600 border-b-2 border-green-600'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <Home className="w-4 h-4" />
+                Room Messages
+              </div>
+            </button>
+            <button
+              onClick={() => { setActiveTab('contact'); setSelectedConversation(null); fetchContacts(); }}
+              className={`pb-3 px-1 text-sm font-medium transition-colors relative ${
+                activeTab === 'contact'
+                  ? 'text-green-600 border-b-2 border-green-600'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <Mail className="w-4 h-4" />
+                Contact Inquiries
+                {unreadContactsCount > 0 && (
+                  <span className="inline-flex items-center justify-center w-5 h-5 text-xs font-medium bg-red-500 text-white rounded-full">
+                    {unreadContactsCount}
+                  </span>
+                )}
+              </div>
+            </button>
           </div>
         </div>
 
         {/* Main Content */}
         <div className="flex-1 flex overflow-hidden">
+          {activeTab === 'room' ? (
+            <>
           {/* Conversations List */}
           <div className="w-80 border-r border-gray-100 bg-white flex flex-col">
             {/* Search */}
@@ -645,6 +789,213 @@ const MessagesManagementContent = () => {
               </div>
             )}
           </div>
+            </>
+          ) : (
+            <>
+              {/* Contact Inquiries List */}
+              <div className="w-80 border-r border-gray-100 bg-white flex flex-col">
+                {/* Search */}
+                <div className="p-4 border-b border-gray-100">
+                  <div className="relative">
+                    <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                    <input
+                      type="text"
+                      placeholder="Search inquiries..."
+                      value={contactSearchQuery}
+                      onChange={(e) => setContactSearchQuery(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    />
+                  </div>
+                </div>
+
+                {/* Contact List */}
+                <div className="flex-1 overflow-y-auto">
+                  {contactsLoading ? (
+                    <div className="flex items-center justify-center h-32">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-green-600"></div>
+                    </div>
+                  ) : filteredContacts.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center h-32 text-gray-500">
+                      <Mail className="w-8 h-8 mb-2 text-gray-300" />
+                      <p className="text-sm">No contact inquiries yet</p>
+                    </div>
+                  ) : (
+                    filteredContacts.map((contact) => (
+                      <button
+                        key={contact._id}
+                        onClick={() => handleSelectContact(contact)}
+                        className={`w-full p-4 border-b border-gray-100 hover:bg-gray-50 transition-colors text-left ${
+                          selectedContact?._id === contact._id ? 'bg-green-50 border-l-4 border-l-green-600' : ''
+                        }`}
+                      >
+                        <div className="flex items-start gap-3">
+                          {/* User Avatar */}
+                          <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
+                            <User className="w-5 h-5 text-gray-400" />
+                          </div>
+
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between mb-1">
+                              <h3 className="font-medium text-gray-900 truncate">
+                                {contact.name}
+                              </h3>
+                              <span className="text-xs text-gray-400 flex-shrink-0">
+                                {formatTime(contact.createdAt)}
+                              </span>
+                            </div>
+
+                            {/* Subject */}
+                            <div className="flex items-center text-xs text-gray-500 mb-1">
+                              <span className="truncate font-medium">{contact.subject}</span>
+                            </div>
+
+                            {/* Message Preview */}
+                            <p className="text-sm text-gray-500 truncate">
+                              {contact.message}
+                            </p>
+
+                            {/* Status Badge */}
+                            <div className="flex items-center gap-2 mt-1">
+                              {contact.status === 'unread' && (
+                                <span className="inline-flex items-center px-2 py-0.5 text-xs font-medium bg-red-100 text-red-700 rounded-full">
+                                  New
+                                </span>
+                              )}
+                              {contact.status === 'replied' && (
+                                <span className="inline-flex items-center px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700 rounded-full">
+                                  Replied
+                                </span>
+                              )}
+                              {contact.replies?.length > 0 && (
+                                <span className="text-xs text-gray-400">
+                                  {contact.replies.length} {contact.replies.length === 1 ? 'reply' : 'replies'}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </button>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              {/* Contact Detail Panel */}
+              <div className="flex-1 flex flex-col bg-gray-50">
+                {selectedContact ? (
+                  <>
+                    {/* Contact Header */}
+                    <div className="bg-white border-b border-gray-100 px-6 py-4">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
+                          <User className="w-5 h-5 text-gray-400" />
+                        </div>
+                        <div className="flex-1">
+                          <h2 className="font-semibold text-gray-900">
+                            {selectedContact.name}
+                          </h2>
+                          <div className="flex items-center gap-4 text-sm text-gray-500">
+                            <span className="flex items-center gap-1">
+                              <Mail className="w-3 h-3" />
+                              {selectedContact.email}
+                            </span>
+                            {selectedContact.phone && (
+                              <span className="flex items-center gap-1">
+                                <Phone className="w-3 h-3" />
+                                {selectedContact.phone}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm font-medium text-gray-900">{selectedContact.subject}</p>
+                          <p className="text-xs text-gray-500">{formatContactDate(selectedContact.createdAt)}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Messages Thread */}
+                    <div className="flex-1 overflow-y-auto p-6 space-y-4">
+                      {/* Original Message */}
+                      <div className="flex justify-start">
+                        <div className="flex flex-col max-w-[70%] items-start">
+                          <div className="flex items-center gap-2 mb-1">
+                            <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center">
+                              <User className="w-3 h-3 text-gray-400" />
+                            </div>
+                            <span className="text-xs font-medium text-green-600">
+                              {selectedContact.name}
+                            </span>
+                            <span className="text-xs text-gray-400">
+                              {formatContactDate(selectedContact.createdAt)}
+                            </span>
+                          </div>
+                          <div className="bg-white border border-gray-200 rounded-2xl rounded-bl-sm px-4 py-3">
+                            <p className="text-sm text-gray-800 whitespace-pre-wrap">{selectedContact.message}</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Replies */}
+                      {selectedContact.replies?.map((reply, index) => (
+                        <div key={index} className="flex justify-end">
+                          <div className="flex flex-col max-w-[70%] items-end">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="text-xs text-gray-400">
+                                {formatContactDate(reply.repliedAt)}
+                              </span>
+                              <span className="text-xs font-medium text-blue-600">
+                                {reply.repliedBy?.firstName || 'Admin'} {reply.repliedBy?.lastName || ''}
+                              </span>
+                            </div>
+                            <div className="bg-blue-500 text-white rounded-2xl rounded-br-sm px-4 py-3">
+                              <p className="text-sm whitespace-pre-wrap">{reply.message}</p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Reply Input */}
+                    <div className="bg-white border-t border-gray-100 p-4">
+                      <div className="flex items-center gap-3">
+                        <textarea
+                          value={replyMessage}
+                          onChange={(e) => setReplyMessage(e.target.value)}
+                          onKeyPress={(e) => {
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                              e.preventDefault();
+                              handleSendReply();
+                            }
+                          }}
+                          placeholder="Type your reply..."
+                          rows={2}
+                          className="flex-1 px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none"
+                          disabled={sendingReply}
+                        />
+                        <button
+                          onClick={handleSendReply}
+                          disabled={!replyMessage.trim() || sendingReply}
+                          className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center gap-2"
+                        >
+                          <Send className="w-4 h-4" />
+                          <span>{sendingReply ? 'Sending...' : 'Send'}</span>
+                        </button>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex-1 flex flex-col items-center justify-center text-gray-500">
+                    <div className="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center mb-4">
+                      <Mail className="w-10 h-10 text-gray-300" />
+                    </div>
+                    <h3 className="text-lg font-medium text-gray-900 mb-1">Select an inquiry</h3>
+                    <p className="text-sm">Choose an inquiry from the list to view and reply</p>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
         </div>
       </div>
     </AdminLayout>
