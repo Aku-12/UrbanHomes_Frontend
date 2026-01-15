@@ -82,7 +82,7 @@ const MessagesManagementContent = () => {
   const currentUserId = (() => {
     try {
       const user = JSON.parse(localStorage.getItem('user') || '{}');
-      return user?._id;
+      return user?.id || user?._id;
     } catch {
       return null;
     }
@@ -325,7 +325,7 @@ const MessagesManagementContent = () => {
     <AdminLayout>
       <div className="h-[calc(100vh-80px)] flex flex-col">
         {/* Header */}
-        <div className="bg-white border-b px-6 py-4">
+        <div className="bg-white border-b border-gray-100 px-6 py-4">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Messages</h1>
@@ -333,25 +333,9 @@ const MessagesManagementContent = () => {
                 Respond to tenant inquiries and messages
               </p>
             </div>
-            <div className="flex items-center gap-4">
-              {/* Connection Status */}
-              <div className={`flex items-center gap-1.5 px-2 py-1 rounded-full text-xs ${
-                isConnected ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
-              }`}>
-                {isConnected ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
-                {isConnected ? 'Live' : 'Offline'}
-              </div>
-              <button
-                onClick={() => fetchConversations()}
-                className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-                Refresh
-              </button>
-              <div className="flex items-center gap-2 text-sm text-gray-500">
-                <MessageCircle className="w-4 h-4" />
-                <span>{conversations.length} conversations</span>
-              </div>
+            <div className="flex items-center gap-2 text-sm text-gray-500">
+              <MessageCircle className="w-4 h-4" />
+              <span>{conversations.length} conversations</span>
             </div>
           </div>
         </div>
@@ -359,9 +343,9 @@ const MessagesManagementContent = () => {
         {/* Main Content */}
         <div className="flex-1 flex overflow-hidden">
           {/* Conversations List */}
-          <div className="w-80 border-r bg-white flex flex-col">
+          <div className="w-80 border-r border-gray-100 bg-white flex flex-col">
             {/* Search */}
-            <div className="p-4 border-b">
+            <div className="p-4 border-b border-gray-100">
               <div className="relative">
                 <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                 <input
@@ -390,7 +374,7 @@ const MessagesManagementContent = () => {
                   <button
                     key={conv._id}
                     onClick={() => handleSelectConversation(conv)}
-                    className={`w-full p-4 border-b hover:bg-gray-50 transition-colors text-left ${
+                    className={`w-full p-4 border-b border-gray-100 hover:bg-gray-50 transition-colors text-left ${
                       selectedConversation?._id === conv._id ? 'bg-green-50 border-l-4 border-l-green-600' : ''
                     }`}
                   >
@@ -448,7 +432,7 @@ const MessagesManagementContent = () => {
             {selectedConversation ? (
               <>
                 {/* Conversation Header */}
-                <div className="bg-white border-b px-6 py-4">
+                <div className="bg-white border-b border-gray-100 px-6 py-4">
                   <div className="flex items-center gap-4">
                     <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
                       {selectedConversation?.tenant?.avatar ? (
@@ -564,16 +548,16 @@ const MessagesManagementContent = () => {
                                   )}
                                 </div>
                               )}
-                              <span className={`text-xs font-medium ${isOwnMessage ? 'text-green-600' : 'text-blue-600'}`}>
+                              <span className={`text-xs font-medium ${isOwnMessage ? 'text-blue-600' : 'text-green-600'}`}>
                                 {isOwnMessage ? 'You (Admin)' : (senderName || getTenantName(selectedConversation))}
                               </span>
                             </div>
                             {/* Message bubble */}
-                            <div 
+                            <div
                               className={`rounded-2xl px-4 py-2 ${
-                                isOwnMessage 
-                                  ? 'bg-green-500 text-white rounded-br-sm' 
-                                  : 'bg-blue-500 text-white rounded-bl-sm'
+                                isOwnMessage
+                                  ? 'bg-blue-500 text-white rounded-br-sm'
+                                  : 'bg-green-500 text-white rounded-bl-sm'
                               }`}
                             >
                               <p className="text-sm">{msg.content}</p>
@@ -584,8 +568,8 @@ const MessagesManagementContent = () => {
                                 {formatTime(msg.createdAt)}
                               </span>
                               {isOwnMessage && (
-                                msg.isRead 
-                                  ? <CheckCheck className="w-3 h-3 text-green-500" />
+                                msg.isRead
+                                  ? <CheckCheck className="w-3 h-3 text-blue-500" />
                                   : <Check className="w-3 h-3 text-gray-400" />
                               )}
                             </div>
@@ -598,7 +582,7 @@ const MessagesManagementContent = () => {
                 </div>
 
                 {/* Quick Replies */}
-                <div className="px-6 py-2 bg-white border-t">
+                <div className="px-6 py-2 bg-white border-t border-gray-100">
                   <div className="flex gap-2 overflow-x-auto">
                     {[
                       "Thanks for your interest!",
@@ -618,7 +602,7 @@ const MessagesManagementContent = () => {
                 </div>
 
                 {/* Message Input */}
-                <div className="bg-white border-t p-4">
+                <div className="bg-white border-t border-gray-100 p-4">
                   {/* Typing Indicator */}
                   {isTyping && typingUser && (
                     <div className="flex items-center gap-2 mb-2 text-sm text-gray-500">
