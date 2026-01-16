@@ -27,6 +27,7 @@ import {
 import toast from 'react-hot-toast';
 import roomApi from '../../api/roomApi';
 import AdminLayout from '../../components/admin/AdminLayout';
+import MapPicker from '../../components/ui/MapPicker';
 
 const ROOM_TYPES = ['Studio', 'Private', 'Shared', '1BHK', '2BHK', '3BHK', 'Apartment'];
 
@@ -62,6 +63,16 @@ const EditRoom = () => {
       city: '',
       area: '',
       address: '',
+      coordinates: {
+        latitude: null,
+        longitude: null,
+      },
+      geoLocation: {
+        type: 'Point',
+        coordinates: [],
+      },
+      placeName: '',
+      formattedAddress: '',
     },
     amenities: {
       wifi: false,
@@ -100,6 +111,13 @@ const EditRoom = () => {
               city: room.location?.city || '',
               area: room.location?.area || '',
               address: room.location?.address || '',
+              coordinates: {
+                latitude: room.location?.coordinates?.latitude || room.location?.geoLocation?.coordinates?.[1] || null,
+                longitude: room.location?.coordinates?.longitude || room.location?.geoLocation?.coordinates?.[0] || null,
+              },
+              geoLocation: room.location?.geoLocation || { type: 'Point', coordinates: [] },
+              placeName: room.location?.placeName || '',
+              formattedAddress: room.location?.formattedAddress || '',
             },
             amenities: {
               wifi: room.amenities?.wifi || false,
@@ -152,6 +170,39 @@ const EditRoom = () => {
     } else {
       setFormData(prev => ({ ...prev, [name]: value }));
     }
+  };
+
+  // Handle map location change
+  const handleMapLocationChange = (locationData) => {
+    if (!locationData) {
+      // Clear map location
+      setFormData(prev => ({
+        ...prev,
+        location: {
+          ...prev.location,
+          coordinates: { latitude: null, longitude: null },
+          geoLocation: { type: 'Point', coordinates: [] },
+          placeName: '',
+          formattedAddress: '',
+        }
+      }));
+      return;
+    }
+
+    const { longitude, latitude, placeName, formattedAddress } = locationData;
+    setFormData(prev => ({
+      ...prev,
+      location: {
+        ...prev.location,
+        coordinates: { latitude, longitude },
+        geoLocation: {
+          type: 'Point',
+          coordinates: [longitude, latitude],
+        },
+        placeName: placeName || '',
+        formattedAddress: formattedAddress || '',
+      }
+    }));
   };
 
   const handleAddImage = () => {
@@ -466,6 +517,25 @@ const EditRoom = () => {
                 onChange={handleChange}
                 placeholder="e.g., 123 Thamel Marg, near Garden of Dreams"
                 className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+              />
+            </div>
+
+            {/* Map Picker */}
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Pin Location on Map
+              </label>
+              <p className="text-xs text-gray-500 mb-3">
+                Search for a place or click on the map to set the exact location. You can drag the marker to adjust.
+              </p>
+              <MapPicker
+                value={{
+                  longitude: formData.location.coordinates?.longitude,
+                  latitude: formData.location.coordinates?.latitude,
+                  placeName: formData.location.placeName,
+                  formattedAddress: formData.location.formattedAddress,
+                }}
+                onChange={handleMapLocationChange}
               />
             </div>
           </div>

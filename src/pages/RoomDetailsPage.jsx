@@ -26,27 +26,13 @@ import {
   ChevronDown,
   ImageOff,
 } from 'lucide-react';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
 import toast from 'react-hot-toast';
 import { Header, Footer } from '../components/layout';
 import { useRoom } from '../hooks/useRooms';
 import { useWishlist } from '../context';
 import { reviewApi } from '../api';
 import { getImageUrl } from '../utils/imageUtils';
-
-// Fix for default marker icon in Leaflet with Vite
-const defaultIcon = L.icon({
-  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41],
-});
-L.Marker.prototype.options.icon = defaultIcon;
+import MapViewer from '../components/ui/MapViewer';
 
 const PLACEHOLDER_IMAGE = 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&h=500&fit=crop';
 
@@ -225,7 +211,28 @@ const RoomDetailsPage = () => {
   }
 
   const locationText = `${room.location?.area}, ${room.location?.city}`;
-  const coordinates = room.location?.coordinates || { latitude: 27.7172, longitude: 85.324 }; // Default to Kathmandu
+
+  // Get coordinates from either the legacy format or GeoJSON format
+  const getCoordinates = () => {
+    // Try GeoJSON format first
+    if (room.location?.geoLocation?.coordinates?.length === 2) {
+      return {
+        longitude: room.location.geoLocation.coordinates[0],
+        latitude: room.location.geoLocation.coordinates[1],
+      };
+    }
+    // Fall back to legacy format
+    if (room.location?.coordinates?.latitude && room.location?.coordinates?.longitude) {
+      return {
+        latitude: room.location.coordinates.latitude,
+        longitude: room.location.coordinates.longitude,
+      };
+    }
+    // Default to Kathmandu
+    return { latitude: 27.7172, longitude: 85.324 };
+  };
+
+  const coordinates = getCoordinates();
 
   // Get active amenities
   const activeAmenities = room.amenities
@@ -536,29 +543,15 @@ const RoomDetailsPage = () => {
                 <MapPin size={20} className="text-green-600" />
                 Location
               </h2>
-              <p className="text-gray-600 mb-4">{room.location?.address || locationText}</p>
-              <div className="h-64 rounded-lg overflow-hidden">
-                <MapContainer
-                  center={[coordinates.latitude, coordinates.longitude]}
-                  zoom={15}
-                  style={{ height: '100%', width: '100%' }}
-                  scrollWheelZoom={false}
-                >
-                  <TileLayer
-                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                  />
-                  <Marker position={[coordinates.latitude, coordinates.longitude]}>
-                    <Popup>
-                      <div className="text-center">
-                        <strong>{room.title}</strong>
-                        <br />
-                        {locationText}
-                      </div>
-                    </Popup>
-                  </Marker>
-                </MapContainer>
-              </div>
+              <p className="text-gray-600 mb-4">{room.location?.formattedAddress || room.location?.address || locationText}</p>
+              <MapViewer
+                longitude={coordinates.longitude}
+                latitude={coordinates.latitude}
+                title={room.title}
+                address={locationText}
+                height="256px"
+                showGoogleMapsButton={true}
+              />
             </div>
 
             {/* Reviews Section */}
